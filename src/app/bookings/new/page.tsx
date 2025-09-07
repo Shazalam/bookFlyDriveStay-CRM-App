@@ -160,8 +160,17 @@ export default function NewBookingPage() {
                                     ))}
                                 </select>
                             </div>
-                            <VehicleSelector form={form} setForm={setForm} />
-                              <InputField
+                            
+                            <VehicleSelector
+                                form={{
+                                    vehicleType: form.vehicleType,
+                                    vehicleCategory: form.vehicleCategory,
+                                    vehicleImage: form.vehicleImage,
+                                }}          
+                                setForm={setForm}
+                            />
+
+                            <InputField
                                 label="Pickup Location"
                                 name="pickupLocation"
                                 value={form.pickupLocation}
@@ -169,7 +178,7 @@ export default function NewBookingPage() {
                                 placeholder="JFK Airport"
                                 required
                             />
-                             <InputField
+                            <InputField
                                 label="Pickup Date"
                                 name="pickupDate"
                                 type="date"
@@ -185,8 +194,8 @@ export default function NewBookingPage() {
                                 onChange={handleChange}
                                 required
                             />
-                            
-                             <InputField
+
+                            <InputField
                                 label="Drop-off Location"
                                 name="dropoffLocation"
                                 value={form.dropoffLocation}
@@ -194,8 +203,8 @@ export default function NewBookingPage() {
                                 placeholder="LAX Airport"
                                 required
                             />
-                           
-                             <InputField
+
+                            <InputField
                                 label="Drop-off Date"
                                 name="dropoffDate"
                                 type="date"
@@ -203,7 +212,7 @@ export default function NewBookingPage() {
                                 onChange={handleChange}
                                 required
                             />
-                            
+
                             <InputField
                                 label="Drop-off Time"
                                 name="dropoffTime"
@@ -212,7 +221,7 @@ export default function NewBookingPage() {
                                 onChange={handleChange}
                                 required
                             />
-                           
+
 
                         </div>
                     </section>
