@@ -8,14 +8,16 @@ interface Car {
   image: string;
 }
 
+interface VehicleForm {
+  vehicleType: string;
+  vehicleCategory: string;
+  vehicleImage: string;
+  [key: string]: unknown; // allows extra fields without `any`
+}
+
 interface VehicleSelectorProps {
-  form: {
-    vehicleType: string;
-    vehicleCategory: string;
-    vehicleImage: string;
-    [key: string]: unknown; // allow other form fields
-  };
-  setForm: React.Dispatch<React.SetStateAction<any>>;
+  form: VehicleForm;
+  setForm: React.Dispatch<React.SetStateAction<VehicleForm>>;
 }
 
 const carDatabase: Car[] = [
@@ -62,7 +64,7 @@ export default function VehicleSelector({ form, setForm }: VehicleSelectorProps)
   );
 
   function handleSelectCar(car: Car) {
-    setForm((prev: any) => ({
+    setForm((prev) => ({
       ...prev,
       vehicleType: car.name,
       vehicleCategory: car.category,
@@ -73,7 +75,7 @@ export default function VehicleSelector({ form, setForm }: VehicleSelectorProps)
   }
 
   function handleClearSelection() {
-    setForm((prev: any) => ({
+    setForm((prev) => ({
       ...prev,
       vehicleType: "",
       vehicleCategory: "",

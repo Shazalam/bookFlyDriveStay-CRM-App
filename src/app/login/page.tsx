@@ -37,9 +37,10 @@ export default function LoginPage() {
       } else {
         toast.error(data.error || "Invalid credentials");
       }
-    } catch (err) {
+    }catch (err: unknown) {
       setLoading(false);
-      toast.error("Network error, please try again");
+      const message = err instanceof Error ? err.message : "Error loading booking";
+      toast.error(message || "Network error, please try again");
     }
   }
 
