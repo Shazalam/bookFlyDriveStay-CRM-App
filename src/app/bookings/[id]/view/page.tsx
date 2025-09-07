@@ -75,6 +75,19 @@ export default function BookingDetailPage() {
         }));
     };
 
+    const formatTimeWithCapitalAMPM = (dateString: string, timeZone: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        }).replace(/(am|pm)/i, match => match.toUpperCase());
+    };
+
     if (loading) return (
         <LoadingScreen />
     );
@@ -335,7 +348,13 @@ export default function BookingDetailPage() {
                                         <FiUser className="mr-2 text-blue-500" /> Sales Information
                                     </h3>
                                     <p className="text-gray-600"><strong>Sales Agent:</strong> {booking.salesAgent}</p>
-                                    <p className="text-gray-600"><strong>Booking Created:</strong> {new Date(booking.createdAt).toLocaleString()}</p>
+
+                                    <p className="text-gray-600">
+                                        <strong>Booking Created:</strong> {formatTimeWithCapitalAMPM(booking.createdAt, 'America/Vancouver')} PDT
+                                    </p>
+                                    <p className="text-gray-600">
+                                        <strong>Booking Created:</strong> {formatTimeWithCapitalAMPM(booking.createdAt, 'Asia/Kolkata')} IST
+                                    </p>
                                 </div>
                             </div>
                         )}
