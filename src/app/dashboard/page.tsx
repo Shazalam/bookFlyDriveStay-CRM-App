@@ -267,7 +267,7 @@ export default function DashboardPage() {
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort('totalAmount')}>
                       <div className="flex items-center gap-1">
                         Total
-                        {sortConfig?.key === 'totalAmount' && (
+                        {sortConfig?.key === 'total' && (
                           sortConfig.direction === 'ascending' ? <FiChevronUp /> : <FiChevronDown />
                         )}
                       </div>
