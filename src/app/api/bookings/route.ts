@@ -35,7 +35,6 @@ const REQUIRED_FIELDS = [
 ];
 
 // ✅ POST create booking
-
 export async function POST(req: Request) {
   try {
     await connectDB();
@@ -45,6 +44,11 @@ export async function POST(req: Request) {
     if (!token) return apiResponse({ error: "Unauthorized" }, 401);
 
     const decoded = verifyToken(token);
+
+    // ✅ Type guard to check if decoded is a JwtPayload with id
+    if (typeof decoded === "string" || !decoded || !("id" in decoded)) {
+      return apiResponse({ error: "Invalid token" }, 401);
+    }
 
     const data = await req.json();
 
@@ -57,10 +61,12 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log("agentId =>", decoded.id);
+    
     // ✅ Save booking (salesAgent enforced from token)
     const booking = await Booking.create({
       ...data,
-      agentId: decoded?.id,
+      agentId: decoded.id, // Now TypeScript knows decoded has an id property
     });
 
     // ✅ Send email (async, non-blocking)
@@ -71,7 +77,7 @@ export async function POST(req: Request) {
     // ).catch((err) => console.error("Email error:", err));
 
     return apiResponse({ success: true, booking }, 201);
-  }  catch (err: unknown) {
+  } catch (err: unknown) {
     console.error("GET /bookings error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
