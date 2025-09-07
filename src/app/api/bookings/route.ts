@@ -1,8 +1,5 @@
-import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Booking from "@/app/models/Booking";
-import { sendEmail } from "@/lib/email/sendEmail";
-import { bookingTemplate } from "@/lib/email/templates/booking";
 import { verifyToken } from "@/lib/auth"; // ✅ auth check
 import { apiResponse } from "@/lib/utils/apiResponse";
 

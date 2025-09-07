@@ -22,6 +22,7 @@ import {
 } from "react-icons/fi";
 import { IoCarSport } from "react-icons/io5";
 import toast from "react-hot-toast";
+import LoadingScreen from "@/components/LoadingScreen";
 
 interface Booking {
   _id: string;
@@ -146,6 +147,10 @@ export default function DashboardPage() {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (loading) return (
+    <LoadingScreen/>
+  );
 
   return (
     <ProtectedRoute>

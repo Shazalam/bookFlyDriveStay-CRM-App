@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import Image from "next/image";
 
 const carDatabase = [
   { name: "Toyota Corolla", category: "Sedan", image: "https://cdn.imagin.studio/getImage?customer=car&make=toyota&modelFamily=corolla&paintId=pspc0001" },
@@ -66,10 +67,12 @@ export default function VehicleSelector({ form, setForm }: any) {
                 onClick={() => handleSelectCar(car)}
                 className="flex items-center gap-3 p-3 cursor-pointer hover:bg-indigo-50 transition"
               >
-                <img
+                <Image
                   src={car.image}
                   alt={car.name}
-                  className="w-12 h-8 object-cover rounded-md"
+                  width={48}  // ✅ 12 * 4 = 48px
+                  height={32} // ✅ 8 * 4 = 32px
+                  className="object-cover rounded-md"
                 />
                 <div>
                   <p className="text-sm font-medium text-gray-900">{car.name}</p>
@@ -91,6 +94,13 @@ export default function VehicleSelector({ form, setForm }: any) {
               src={form.vehicleImage}
               alt={form.vehicleType}
               className="w-20 h-14 object-cover rounded-md"
+            />
+            <Image
+              src={form.vehicleImage}
+              alt={form.vehicleType}
+              width={48}  // ✅ 12 * 4 = 48px
+              height={32} // ✅ 8 * 4 = 32px
+              className="w-20 h-14 object-cover rounded-md"         
             />
             <div>
               <p className="font-medium text-gray-700">{form.vehicleType}</p>
