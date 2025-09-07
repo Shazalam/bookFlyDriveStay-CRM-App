@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { FiMail, FiPhone, FiGlobe, FiCalendar, FiDollarSign, FiFileText, FiClock, FiEdit, FiChevronDown, FiChevronUp, FiUser, FiMapPin, FiCreditCard, FiCheckCircle, FiGift, FiRefreshCw, FiLink, FiSend, FiRotateCw } from "react-icons/fi";
+import { FiMail, FiPhone, FiCalendar, FiDollarSign, FiFileText, FiClock, FiChevronDown, FiChevronUp, FiUser, FiMapPin, FiCreditCard, FiCheckCircle, FiGift, FiRefreshCw, FiLink, FiSend } from "react-icons/fi";
 import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
 
@@ -81,7 +81,7 @@ export default function BookingDetailPage() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
             <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
                 <h1 className="text-2xl font-bold text-gray-800 mb-2">Booking not found</h1>
-                <p className="text-gray-600 mb-6">The booking you're looking for doesn't exist or may have been removed.</p>
+                <p className="text-gray-600 mb-6">{`The booking you're looking for doesn't exist or may have been removed.`}</p>
                 <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition duration-200">
                     Back to Bookings
                 </button>
