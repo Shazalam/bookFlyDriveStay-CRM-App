@@ -4,20 +4,23 @@ import { modificationTemplate } from "@/lib/email/templates/modification";
 import { cancellationTemplate } from "@/lib/email/templates/cancellation";
 import Booking from "@/app/models/Booking";
 import { apiResponse } from "@/lib/utils/apiResponse";
+import { NextRequest } from "next/server";
 
 // ✅ GET /api/bookings/:id
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
 
-    const booking = await Booking.findById(params.id);
+    const { id } = await context.params; // ✅ params is a Promise
+    const booking = await Booking.findById(id);
+
     if (!booking) {
       return apiResponse({ error: "Booking not found" }, 404);
     }
 
-    return apiResponse({ success: true, booking }, 200);
+    return apiResponse({ success: true, booking });
+
   } catch (err: unknown) {
-    console.error("GET /bookings error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
   }
