@@ -160,14 +160,14 @@ export default function NewBookingPage() {
                                     ))}
                                 </select>
                             </div>
-                            
+
                             <VehicleSelector
                                 form={{
                                     vehicleType: form.vehicleType,
                                     vehicleCategory: form.vehicleCategory,
                                     vehicleImage: form.vehicleImage,
-                                }}          
-                                setForm={setForm}
+                                }}
+                                setForm={(vehicleData) => setForm({ ...form, ...vehicleData })}
                             />
 
                             <InputField
