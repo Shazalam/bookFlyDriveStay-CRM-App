@@ -49,7 +49,8 @@ export default function BookingDetailPage() {
                 const data = await res.json();
                 setBooking(data.booking);
             } catch (err: any) {
-                toast.error(err.message || "Error loading booking");
+                console.log("error", err)
+                toast.error(err || "Error loading booking");
             } finally {
                 setLoading(false);
             }

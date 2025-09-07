@@ -16,8 +16,7 @@ export async function GET(req: Request) {
     const bookings = await Booking.find().sort({ createdAt: -1 });
     return apiResponse({ success: true, bookings });
   } catch (err: any) {
-    console.error("GET /bookings error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+    return apiResponse({ error:err || "Server error" }, 500);
   }
 }
 
@@ -71,7 +70,6 @@ export async function POST(req: Request) {
 
     return apiResponse({ success: true, booking }, 201);
   } catch (err: any) {
-    console.error("POST /bookings error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+    return apiResponse({ error:err || "Server error" }, 500);
   }
 }

@@ -1,4 +1,4 @@
-export const modificationTemplate = (data: any) => `
+export const modificationTemplate = (data: T) => `
   <p>Dear ${data.fullName},</p>
   <p>Your booking has been successfully <b>modified</b>. Please review the updated itinerary:</p>
   <ul>

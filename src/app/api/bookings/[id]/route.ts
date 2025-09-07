@@ -17,8 +17,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
     return apiResponse({ success: true, booking }, 200);
   } catch (err: any) {
-    console.error("GET /bookings/:id error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+    return apiResponse({ error:err || "Server error" }, 500);
   }
 }
 
@@ -39,8 +38,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     return apiResponse({ success: true, booking }, 200);
   } catch (err: any) {
-    console.error("PUT /bookings/:id error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+    return apiResponse({ error:err || "Server error" }, 500);
   }
 }
 
@@ -65,7 +63,6 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
 
     return apiResponse({ success: true, booking }, 200);
   } catch (err: any) {
-    console.error("DELETE /bookings/:id error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+    return apiResponse({ error: err || "Server error" }, 500);
   }
 }

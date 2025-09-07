@@ -50,6 +50,7 @@ export async function POST(req: Request) {
       201
     );
   } catch (err: any) {
-    return apiResponse({ error: "Server error" }, 500);
+    console.log("register error =>", err )
+    return apiResponse({ error: err || "Server error" }, 500);
   }
 }

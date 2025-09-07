@@ -1,4 +1,4 @@
-export const cancellationTemplate = (data: any) => `
+export const cancellationTemplate = (data: T) => `
   <p>Dear ${data.fullName},</p>
   <p>We’re writing to confirm that your booking has been <b>cancelled</b>.</p>
   <ul>
