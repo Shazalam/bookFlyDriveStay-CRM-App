@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast"; // ✅ make sure this is imported
 import LoadingButton from "@/components/LoadingButton";
 
@@ -14,36 +14,34 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
 
-async function handleLogin(e: React.FormEvent) {
-  e.preventDefault();
-  setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-  try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+      const data = await res.json();
+      console.log("login response =>", data);
+      setLoading(false);
 
-    const data = await res.json();
-    console.log("login response =>", data);
-    setLoading(false);
+      if (res.ok && data.success) {
+        toast.success("Login successful! Redirecting...");
 
-    if (res.ok && data.success) {
-      toast.success("Login successful! Redirecting...");
-
-      // 🚀 Redirect immediately when login succeeds
-      router.push("/dashboard");
-    } else {
-      toast.error(data.error || "Invalid credentials");
+        // 🚀 Redirect immediately when login succeeds
+        router.push("/dashboard");
+      } else {
+        toast.error(data.error || "Invalid credentials");
+      }
+    } catch (err) {
+      setLoading(false);
+      toast.error("Network error, please try again");
     }
-  } catch (err) {
-    setLoading(false);
-    toast.error("Network error, please try again");
   }
-}
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">

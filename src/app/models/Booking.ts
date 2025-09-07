@@ -20,7 +20,7 @@ export interface IBooking extends Document {
   expiration: string;
   billingAddress: string;
   salesAgent: string;
-  agentId: String, // 🔑 reference
+  agentId: string, // 🔑 reference
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
 }
 
