@@ -69,8 +69,9 @@ export default function DashboardPage() {
 
         const data = await res.json();
         setBookings(data.bookings || []);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to load bookings");
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Error loading booking";
+        toast.error(message || "Failed to load bookings");
       } finally {
         setLoading(false);
       }
@@ -91,11 +92,11 @@ export default function DashboardPage() {
       setBookings((prev) =>
         prev.map((b) => (b._id === id ? { ...b, status: "CANCELLED" } : b))
       );
-
       toast.success("Booking cancelled");
-    } catch (err: any) {
-      toast.error(err.message || "Cancel failed");
-    }
+    }  catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Error loading booking";
+        toast.error(message || "Cancel bookings");
+      } 
   };
 
   const handleSort = (key: keyof Booking) => {
@@ -149,7 +150,7 @@ export default function DashboardPage() {
   };
 
   if (loading) return (
-    <LoadingScreen/>
+    <LoadingScreen />
   );
 
   return (

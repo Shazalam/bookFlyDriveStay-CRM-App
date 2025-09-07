@@ -49,8 +49,8 @@ export async function POST(req: Request) {
       },
       201
     );
-  } catch (err: any) {
-    console.log("register error =>", err )
-    return apiResponse({ error: err || "Server error" }, 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }

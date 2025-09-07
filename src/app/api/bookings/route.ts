@@ -15,8 +15,10 @@ export async function GET(req: Request) {
 
     const bookings = await Booking.find().sort({ createdAt: -1 });
     return apiResponse({ success: true, bookings });
-  } catch (err: any) {
-    return apiResponse({ error:err || "Server error" }, 500);
+  } catch (err: unknown) {
+    console.error("GET /bookings error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }
 
@@ -69,7 +71,9 @@ export async function POST(req: Request) {
     // ).catch((err) => console.error("Email error:", err));
 
     return apiResponse({ success: true, booking }, 201);
-  } catch (err: any) {
-    return apiResponse({ error:err || "Server error" }, 500);
+  }  catch (err: unknown) {
+    console.error("GET /bookings error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }

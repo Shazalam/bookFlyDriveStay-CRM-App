@@ -16,8 +16,10 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     }
 
     return apiResponse({ success: true, booking }, 200);
-  } catch (err: any) {
-    return apiResponse({ error:err || "Server error" }, 500);
+  } catch (err: unknown) {
+    console.error("GET /bookings error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }
 
@@ -37,8 +39,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       .catch((err) => console.error("Email send error (update):", err));
 
     return apiResponse({ success: true, booking }, 200);
-  } catch (err: any) {
-    return apiResponse({ error:err || "Server error" }, 500);
+  } catch (err: unknown) {
+    console.error("GET /bookings error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }
 
@@ -62,7 +66,9 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
       .catch((err) => console.error("Email send error (cancel):", err));
 
     return apiResponse({ success: true, booking }, 200);
-  } catch (err: any) {
-    return apiResponse({ error: err || "Server error" }, 500);
+  } catch (err: unknown) {
+    console.error("GET /bookings error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }
