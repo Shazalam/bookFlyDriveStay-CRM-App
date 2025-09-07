@@ -264,7 +264,7 @@ export default function DashboardPage() {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort('totalAmount')}>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort('total')}>
                       <div className="flex items-center gap-1">
                         Total
                         {sortConfig?.key === 'total' && (
