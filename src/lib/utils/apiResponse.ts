@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-export function apiResponse(
-  data: any,
+export function apiResponse<T>(
+  data: T,
   status: number = 200,
   headers: Record<string, string> = {}
 ) {

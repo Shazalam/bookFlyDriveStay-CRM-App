@@ -4,31 +4,37 @@ import { modificationTemplate } from "@/lib/email/templates/modification";
 import { cancellationTemplate } from "@/lib/email/templates/cancellation";
 import Booking from "@/app/models/Booking";
 import { apiResponse } from "@/lib/utils/apiResponse";
+import { NextRequest } from "next/server";
 
 // ✅ GET /api/bookings/:id
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
 
-    const booking = await Booking.findById(params.id);
+    const { id } = await context.params; // ✅ params is a Promise
+    const booking = await Booking.findById(id);
+
     if (!booking) {
       return apiResponse({ error: "Booking not found" }, 404);
     }
 
-    return apiResponse({ success: true, booking }, 200);
-  } catch (err: any) {
-    console.error("GET /bookings/:id error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+    return apiResponse({ success: true, booking });
+
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }
 
 // ✅ PUT /api/bookings/:id
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
+
+    const { id } = await context.params; // ✅ params is a Promise
     const data = await req.json();
 
-    const booking = await Booking.findByIdAndUpdate(params.id, data, { new: true });
+    const booking = await Booking.findByIdAndUpdate(id, data, { new: true });
     if (!booking) {
       return apiResponse({ error: "Booking not found" }, 404);
     }
@@ -38,19 +44,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       .catch((err) => console.error("Email send error (update):", err));
 
     return apiResponse({ success: true, booking }, 200);
-  } catch (err: any) {
-    console.error("PUT /bookings/:id error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+  } catch (err: unknown) {
+    console.error("GET /bookings error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }
 
 // ✅ DELETE /api/bookings/:id
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-
+    const { id } = await context.params; // ✅ params is a Promise
     const booking = await Booking.findByIdAndUpdate(
-      params.id,
+      id,
       { status: "CANCELLED" },
       { new: true }
     );
@@ -64,8 +71,9 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
       .catch((err) => console.error("Email send error (cancel):", err));
 
     return apiResponse({ success: true, booking }, 200);
-  } catch (err: any) {
-    console.error("DELETE /bookings/:id error:", err);
-    return apiResponse({ error: "Server error" }, 500);
+  } catch (err: unknown) {
+    console.error("GET /bookings error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }

@@ -1,4 +1,29 @@
-export const bookingTemplate = (data: any) => `
+export interface BookingTemplateData {
+  fullName: string;
+  email?: string;
+  phoneNumber?: string;
+  rentalCompany?: string;
+  vehicleImage?: string;
+  vehicleType?: string;
+  vehicleCategory?: string;
+  total?: number;
+  mco?: number;
+  payableAtPickup?: number;
+  pickupDate?: string;
+  dropoffDate?: string;
+  pickupTime?: string;
+  dropoffTime?: string;
+  pickupLocation?: string;
+  dropoffLocation?: string;
+  cardLast4?: string;
+  expiration?: string;
+  cardExpiry?: string;
+  billingAddress?: string;
+  salesAgent?: string;
+  confirmationNo?: string;
+}
+
+export const bookingTemplate = (data: BookingTemplateData) => `
   <div style="margin:0;padding:0;background:#f5f7fb;">
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f5f7fb;">
       <tr>

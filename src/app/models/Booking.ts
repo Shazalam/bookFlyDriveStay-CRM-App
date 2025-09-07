@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IBooking extends Document {
   fullName: string;
@@ -20,7 +20,7 @@ export interface IBooking extends Document {
   expiration: string;
   billingAddress: string;
   salesAgent: string;
-  agentId: String, // 🔑 reference
+  agentId: Types.ObjectId;  // 🔑 reference
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
 }
 

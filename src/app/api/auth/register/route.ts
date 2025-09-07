@@ -49,7 +49,8 @@ export async function POST(req: Request) {
       },
       201
     );
-  } catch (err: any) {
-    return apiResponse({ error: "Server error" }, 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Server error";
+    return apiResponse({ error: message }, 500);
   }
 }
