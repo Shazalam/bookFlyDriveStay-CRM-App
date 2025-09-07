@@ -27,12 +27,14 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 // ✅ PUT /api/bookings/:id
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
+
+    const { id } = await context.params; // ✅ params is a Promise
     const data = await req.json();
 
-    const booking = await Booking.findByIdAndUpdate(params.id, data, { new: true });
+    const booking = await Booking.findByIdAndUpdate(id, data, { new: true });
     if (!booking) {
       return apiResponse({ error: "Booking not found" }, 404);
     }
@@ -50,12 +52,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 // ✅ DELETE /api/bookings/:id
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-
+    const { id } = await context.params; // ✅ params is a Promise
     const booking = await Booking.findByIdAndUpdate(
-      params.id,
+      id,
       { status: "CANCELLED" },
       { new: true }
     );
