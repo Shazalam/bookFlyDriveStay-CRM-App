@@ -15,8 +15,7 @@ import {
   FiBriefcase,
   FiCheckCircle,
   FiAlertCircle,
-  FiXCircle,
-  FiLayers
+  FiXCircle
 } from "react-icons/fi";
 import { IoCarSport } from "react-icons/io5";
 import toast from "react-hot-toast";
@@ -41,7 +40,7 @@ interface Booking {
   billingAddress: string;
   salesAgent: string;
   createdAt: string;
-  status: "BOOKED" | "MODIFIED" | "CANCELLED";
+  status: "BOOKED" | "MODIFIED" | "CANCELLED" | "ALL";
 }
 
 type BookingStatus = Booking["status"];
@@ -49,7 +48,6 @@ type SortableField = keyof Booking;
 type SortDirection = "ascending" | "descending";
 
 export default function DashboardPage() {
-
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<BookingStatus>("BOOKED");
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,8 +59,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-
-  console.log("bookings =>", bookings)
 
   // Fetch bookings from API
   useEffect(() => {
@@ -128,7 +124,30 @@ export default function DashboardPage() {
       const aValue = a[key];
       const bValue = b[key];
 
-      // Handle different data types for sorting
+      // Handle null/undefined values
+      if (aValue == null || bValue == null) {
+        if (aValue == null && bValue == null) return 0;
+        return aValue == null ? (direction === "ascending" ? -1 : 1) : (direction === "ascending" ? 1 : -1);
+      }
+
+      // Check if values are likely dates (string dates)
+      const isLikelyDate = (value: unknown): boolean => {
+        if (typeof value === 'string') {
+          // Try to parse as date
+          const date = new Date(value);
+          return !isNaN(date.getTime());
+        }
+        return false;
+      };
+
+      if (isLikelyDate(aValue) && isLikelyDate(bValue)) {
+        const aDate = new Date(aValue);
+        const bDate = new Date(bValue);
+        return direction === "ascending"
+          ? aDate.getTime() - bDate.getTime()
+          : bDate.getTime() - aDate.getTime();
+      }
+
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         return direction === "ascending"
           ? aValue.localeCompare(bValue)
@@ -137,12 +156,6 @@ export default function DashboardPage() {
 
       if (typeof aValue === 'number' && typeof bValue === 'number') {
         return direction === "ascending" ? aValue - bValue : bValue - aValue;
-      }
-
-      if (aValue instanceof Date && bValue instanceof Date) {
-        return direction === "ascending"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
       }
 
       return 0;
@@ -161,8 +174,6 @@ export default function DashboardPage() {
     });
   }, [sortedBookings, activeTab, searchTerm]);
 
-
-
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -171,20 +182,18 @@ export default function DashboardPage() {
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
- const getStatusIcon = useCallback((status: BookingStatus) => {
-  switch (status) {
-    case "ALL":
-      return <FiLayers className="text-indigo-500" />; // 📚 All Bookings
-    case "BOOKED":
-      return <FiCheckCircle className="text-green-500" />; // ✅ Active
-    case "MODIFIED":
-      return <FiAlertCircle className="text-yellow-500" />; // ⚠️ Modified
-    case "CANCELLED":
-      return <FiXCircle className="text-red-500" />; // ❌ Cancelled
-    default:
-      return null;
-  }
-}, []);
+  const getStatusIcon = useCallback((status: BookingStatus) => {
+    switch (status) {
+      case "BOOKED":
+        return <FiCheckCircle className="text-green-500" />;
+      case "MODIFIED":
+        return <FiAlertCircle className="text-yellow-500" />;
+      case "CANCELLED":
+        return <FiXCircle className="text-red-500" />;
+      default:
+        return null;
+    }
+  }, []);
 
   const getStatusColor = useCallback((status: BookingStatus) => {
     switch (status) {
@@ -232,15 +241,11 @@ export default function DashboardPage() {
     [statusCounts]
   );
 
-
-
   if (loading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-
-
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-xl shadow-sm p-3 mb-4">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -252,7 +257,7 @@ export default function DashboardPage() {
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  setCurrentPage(1); // Reset to first page on search
+                  setCurrentPage(1);
                 }}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -268,7 +273,7 @@ export default function DashboardPage() {
                 key={tab.key}
                 onClick={() => {
                   setActiveTab(tab.key);
-                  setCurrentPage(1); // Reset to first page when changing tabs
+                  setCurrentPage(1);
                 }}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${activeTab === tab.key
                   ? 'bg-blue-600 text-white shadow-lg'
@@ -388,13 +393,14 @@ export default function DashboardPage() {
   );
 }
 
+
 // Booking Row Component
 interface BookingRowProps {
   booking: Booking;
   expanded: boolean;
   onExpand: () => void;
   onCancel: (id: string) => void;
-  getStatusIcon: (status: BookingStatus) => JSX.Element | null;
+  getStatusIcon: (status: BookingStatus) => React.ReactElement | null;
   getStatusColor: (status: BookingStatus) => string;
 }
 

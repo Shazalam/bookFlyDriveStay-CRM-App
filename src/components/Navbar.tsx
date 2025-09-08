@@ -1,6 +1,7 @@
 // components/Navbar.tsx
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -40,7 +41,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               <IoCarSport className="w-10 h-10 text-white" />
             </div>
             <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent group-hover:from-indigo-700 group-hover:to-blue-700 transition-colors">
-               CRM
+              CRM
             </span>
           </Link>
 
@@ -85,9 +86,11 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   </div>
                   <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                     {user.avatar ? (
-                      <img
+                      <Image
                         src={user.avatar}
                         alt={user.name}
+                        width={32} // Required
+                        height={32} // Required
                         className="w-8 h-8 rounded-full"
                       />
                     ) : (
