@@ -102,21 +102,21 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 {/* Dropdown menu */}
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                   <Link
-                    href="/profile"
+                    href="/dashboard"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <FiUser className="w-4 h-4 mr-2" />
                     Your Profile
                   </Link>
                   <Link
-                    href="/settings"
+                    href="/dashboard"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <FiSettings className="w-4 h-4 mr-2" />
                     Settings
                   </Link>
                   <Link
-                    href="/help"
+                    href="/dashboard"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <FiHelpCircle className="w-4 h-4 mr-2" />

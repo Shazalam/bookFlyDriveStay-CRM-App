@@ -5,6 +5,7 @@ export interface IBooking extends Document {
   email: string;
   phoneNumber: string;
   rentalCompany: string;
+  confirmationNumber: string;
   vehicleType: string;
   vehicleCategory: string;
   total: number;
@@ -30,6 +31,7 @@ const BookingSchema = new Schema<IBooking>(
     email: { type: String, required: true },
     phoneNumber: { type: String, required: true },
     rentalCompany: { type: String, required: true },
+    confirmationNumber: { type: String, required: true },
     vehicleType: { type: String },
     vehicleCategory: { type: String },
     total: { type: Number },

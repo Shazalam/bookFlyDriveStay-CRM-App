@@ -169,7 +169,7 @@ export default function DashboardPage() {
       const matchesSearch =
         b.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b._id.toLowerCase().includes(searchTerm.toLowerCase());
+        b.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesTab && matchesSearch;
     });
   }, [sortedBookings, activeTab, searchTerm]);
@@ -253,7 +253,7 @@ export default function DashboardPage() {
               <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search bookings by name, email, or confirmation number..."
+                placeholder="Search bookings by name, email, or phone number..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);

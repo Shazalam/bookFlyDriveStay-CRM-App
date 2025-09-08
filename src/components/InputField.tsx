@@ -11,6 +11,9 @@ interface InputFieldProps {
   placeholder?: string;
   required?: boolean;
   maxLength?: number;
+  min?: string; // Make optional since not all input types need 
+  step?: string; // Added for number inputs
+  disabled?: boolean; // Added for disabled state
 }
 
 export default function InputField({
@@ -22,6 +25,9 @@ export default function InputField({
   placeholder,
   required = false,
   maxLength,
+  min, // Destructure the min prop
+  step, // Destructure the step prop
+  disabled = false, // Destructure the disabled prop
 }: InputFieldProps) {
   return (
     <div>
@@ -40,6 +46,9 @@ export default function InputField({
         placeholder={placeholder}
         maxLength={maxLength}
         required={required}
+        min={min} // Pass min to input element
+        step={step} // Pass step to input element
+        disabled={disabled} // Pass disabled to input element
         className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 placeholder-gray-400 
                    focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition 
                    hover:border-indigo-400"
