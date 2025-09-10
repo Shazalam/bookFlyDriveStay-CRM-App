@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import LoadingButton from "@/components/LoadingButton";
 import InputField from "@/components/InputField";
 import VehicleSelector from "@/components/VehicleSelector";
 import { ArrowLeft } from "lucide-react";
+import TimePicker from "@/components/TimePicker";
 
 const rentalCompanies = [
     "Hertz", "Avis", "Sixt", "Budget", "Enterprise",
@@ -23,9 +24,8 @@ export default function NewBookingPage() {
         email: "",
         phoneNumber: "",
         rentalCompany: "",
+        confirmationNumber: "",
         vehicleImage: "",
-        vehicleType: "",
-        vehicleCategory: "",
         total: "",
         mco: "",
         payableAtPickup: "",
@@ -41,6 +41,8 @@ export default function NewBookingPage() {
         salesAgent: "",
     });
 
+    // inside your component
+    const otherInputRef = useRef<HTMLInputElement | null>(null);
     // Fetch logged-in agent
     useEffect(() => {
         async function fetchUser() {
@@ -53,6 +55,14 @@ export default function NewBookingPage() {
         fetchUser();
     }, []);
 
+    useEffect(() => {
+        if (form.rentalCompany === "Other" && otherInputRef.current) {
+            otherInputRef.current.focus();
+
+        }
+    }, [form.rentalCompany]);
+
+
     function handleChange(
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) {
@@ -62,7 +72,6 @@ export default function NewBookingPage() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setLoading(true);
-
         const res = await fetch("/api/bookings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -79,6 +88,7 @@ export default function NewBookingPage() {
             toast.error(data.error || "❌ Something went wrong");
         }
     }
+
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-6 py-10">
@@ -130,17 +140,19 @@ export default function NewBookingPage() {
                                 onChange={handleChange}
                                 placeholder="+1 234 567 890"
                                 required
+
                             />
 
                         </div>
                     </section>
-
                     {/* Section: Booking Details */}
                     <section>
                         <h2 className="text-lg font-semibold text-indigo-700 mb-4 border-b pb-2">
                             📅 Booking Details
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                        {/* Row 1: Rental Company & Confirmation Number */}
+                        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Rental Company
@@ -161,35 +173,108 @@ export default function NewBookingPage() {
                                 </select>
                             </div>
 
+                            {form?.rentalCompany === "Other" ?
+                                <InputField
+                                    label="Confirmation Number"
+                                    name="confirmationNumber"
+                                    value={form.confirmationNumber}
+                                    onChange={handleChange}
+                                    placeholder="e.g., ABC123456"
+                                    required
+                                />
+                                : <></>
+
+                            }
+
+
+                            <InputField
+                                label="Confirmation Number"
+                                name="confirmationNumber"
+                                value={form.confirmationNumber}
+                                onChange={handleChange}
+                                placeholder="e.g., ABC123456"
+                                required
+                            />
+                        </div> */}
+
+                        {/* Row 1: Rental Company & Confirmation Number */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Rental Company
+                                </label>
+                                {form.rentalCompany === "Other" ? (
+                                    <input
+                                        ref={otherInputRef}
+                                        type="text"
+                                        name="rentalCompany"
+                                        value={form.rentalCompany}
+                                        onChange={handleChange}
+                                        placeholder="Enter rental company name"
+                                        className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                                        required
+                                    />
+                                ) : (
+                                    <select
+                                        name="rentalCompany"
+                                        value={form.rentalCompany}
+                                        onChange={handleChange}
+                                        className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                                        required
+                                    >
+                                        <option value="">Select a company</option>
+                                        {rentalCompanies.map((company) => (
+                                            <option key={company} value={company}>
+                                                {company}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+
+                            <InputField
+                                label="Confirmation Number"
+                                name="confirmationNumber"
+                                value={form.confirmationNumber}
+                                onChange={handleChange}
+                                placeholder="e.g., ABC123456"
+                                required
+                            />
+                        </div>
+
+                        {/* Row 2: Vehicle Selection (full width) */}
+                        <div className="mb-6">
                             <VehicleSelector
-                                form={{
-                                    vehicleType: form.vehicleType,
-                                    vehicleCategory: form.vehicleCategory,
-                                    vehicleImage: form.vehicleImage,
-                                }}
-                                setForm={(vehicleData) => setForm({ ...form, ...vehicleData })}
+                                value={form.vehicleImage}
+                                onChange={(url) => setForm((prev) => ({ ...prev, vehicleImage: url }))}
                             />
 
+                        </div>
+
+                        {/* Row 3: Location and Date/Time Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <InputField
                                 label="Pickup Location"
                                 name="pickupLocation"
                                 value={form.pickupLocation}
                                 onChange={handleChange}
-                                placeholder="JFK Airport"
+                                placeholder="e.g., JFK Airport"
                                 required
                             />
+
                             <InputField
                                 label="Pickup Date"
                                 name="pickupDate"
                                 type="date"
                                 value={form.pickupDate}
                                 onChange={handleChange}
+                                min={new Date().toISOString().split('T')[0]}
                                 required
                             />
-                            <InputField
+
+                            <TimePicker
                                 label="Pickup Time"
                                 name="pickupTime"
-                                type="time"
                                 value={form.pickupTime}
                                 onChange={handleChange}
                                 required
@@ -200,7 +285,7 @@ export default function NewBookingPage() {
                                 name="dropoffLocation"
                                 value={form.dropoffLocation}
                                 onChange={handleChange}
-                                placeholder="LAX Airport"
+                                placeholder="e.g., LAX Airport"
                                 required
                             />
 
@@ -210,19 +295,17 @@ export default function NewBookingPage() {
                                 type="date"
                                 value={form.dropoffDate}
                                 onChange={handleChange}
+                                min={form.pickupDate || new Date().toISOString().split('T')[0]}
                                 required
                             />
 
-                            <InputField
+                            <TimePicker
                                 label="Drop-off Time"
                                 name="dropoffTime"
-                                type="time"
                                 value={form.dropoffTime}
                                 onChange={handleChange}
                                 required
                             />
-
-
                         </div>
                     </section>
 
@@ -287,14 +370,6 @@ export default function NewBookingPage() {
                             </div>
                         </div>
                     </section>
-
-                    {/* Section: Vehicle Info */}
-                    {/* <section>
-                        <h2 className="text-lg font-semibold text-indigo-700 mb-4 border-b pb-2">
-                            🚗 Vehicle Information
-                        </h2>
-                        <VehicleSelector form={form} setForm={setForm} />
-                    </section> */}
 
                     {/* Section: Sales Agent */}
                     <section>

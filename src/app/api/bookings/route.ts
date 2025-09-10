@@ -44,16 +44,17 @@ export async function POST(req: Request) {
     if (!token) return apiResponse({ error: "Unauthorized" }, 401);
 
     const decoded = verifyToken(token);
-
-    // ✅ Type guard to check if decoded is a JwtPayload with id
     if (typeof decoded === "string" || !decoded || !("id" in decoded)) {
       return apiResponse({ error: "Invalid token" }, 401);
     }
 
     const data = await req.json();
+    console.log("📥 Incoming Booking Data =>", data);
 
     // ✅ Check required fields manually
-    const missing = REQUIRED_FIELDS.filter((field) => !data[field] || data[field].toString().trim() === "");
+    const missing = REQUIRED_FIELDS.filter(
+      (field) => !data[field] || data[field].toString().trim() === ""
+    );
     if (missing.length > 0) {
       return apiResponse(
         { error: `Missing required fields: ${missing.join(", ")}` },
@@ -61,24 +62,38 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("agentId =>", decoded.id);
-    
-    // ✅ Save booking (salesAgent enforced from token)
-    const booking = await Booking.create({
-      ...data,
-      agentId: decoded.id, // Now TypeScript knows decoded has an id property
-    });
+    // ✅ Normalize payload
+    const payload = {
+      fullName: data.fullName,
+      email: data.email,
+      phoneNumber: data.phoneNumber,
+      rentalCompany: data.rentalCompany,
+      confirmationNumber: data.confirmationNumber,
+      vehicleImage: data.vehicleImage || "", // ensure empty string if not provided
+      total: data.total ? Number(data.total) : 0,
+      mco: data.mco ? Number(data.mco) : 0,
+      payableAtPickup: data.payableAtPickup ? Number(data.payableAtPickup) : 0,
+      pickupDate: data.pickupDate || "",
+      dropoffDate: data.dropoffDate || "",
+      pickupTime: data.pickupTime || "",
+      dropoffTime: data.dropoffTime || "",
+      pickupLocation: data.pickupLocation || "",
+      dropoffLocation: data.dropoffLocation || "",
+      cardLast4: data.cardLast4,
+      expiration: data.expiration,
+      billingAddress: data.billingAddress,
+      salesAgent: data.salesAgent || "Unknown Agent",
+      agentId: decoded.id, // from token
+      status: data.status || "BOOKED",
+    };
 
-    // ✅ Send email (async, non-blocking)
-    // sendEmail(
-    //   booking.email,
-    //   "Booking Confirmation",
-    //   bookingTemplate(booking)
-    // ).catch((err) => console.error("Email error:", err));
+    // ✅ Save booking
+    const booking = await Booking.create(payload);
+    console.log("✅ Booking Saved:", booking);
 
     return apiResponse({ success: true, booking }, 201);
   } catch (err: unknown) {
-    console.error("GET /bookings error:", err);
+    console.error("POST /bookings error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
   }

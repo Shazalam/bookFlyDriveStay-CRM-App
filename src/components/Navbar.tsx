@@ -4,6 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import {
   FiPlus,
   FiLogOut,
@@ -26,6 +27,7 @@ interface NavbarProps {
 
 export default function Navbar({ user, onLogout }: NavbarProps) {
   const pathname = usePathname();
+
 
   // Don't render navbar on auth pages
   const isAuthPage = pathname === "/login" || pathname === "/register";
@@ -102,21 +104,21 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 {/* Dropdown menu */}
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                   <Link
-                    href="/profile"
+                    href="/dashboard"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <FiUser className="w-4 h-4 mr-2" />
                     Your Profile
                   </Link>
                   <Link
-                    href="/settings"
+                    href="/dashboard"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <FiSettings className="w-4 h-4 mr-2" />
                     Settings
                   </Link>
                   <Link
-                    href="/help"
+                    href="/dashboard"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <FiHelpCircle className="w-4 h-4 mr-2" />
@@ -125,7 +127,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   <div className="border-t border-gray-200 my-1"></div>
                   <button
                     onClick={onLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50 cursor-pointer"
                   >
                     <FiLogOut className="w-4 h-4 mr-2" />
                     Sign out
