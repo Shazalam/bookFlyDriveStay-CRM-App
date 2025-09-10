@@ -3,18 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 
-interface VehicleForm {
-  vehicleImage: string; // Cloudinary URL
-  [key: string]: unknown;
-}
-
 interface VehicleSelectorProps {
-  form: VehicleForm;
-  setForm: React.Dispatch<React.SetStateAction<VehicleForm>>;
+  value: string; // current vehicleImage (Cloudinary URL)
+  onChange: (url: string) => void; // callback when vehicleImage changes
 }
 
-export default function VehicleSelector({ form, setForm }: VehicleSelectorProps) {
-  const [preview, setPreview] = useState(form.vehicleImage || "");
+export default function VehicleSelector({ value, onChange }: VehicleSelectorProps) {
+  const [preview, setPreview] = useState(value || "");
   const [uploading, setUploading] = useState(false);
 
   async function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
@@ -37,7 +32,7 @@ export default function VehicleSelector({ form, setForm }: VehicleSelectorProps)
           if (data.success) {
             const url = data.result.secure_url;
             setPreview(url);
-            setForm((prev) => ({ ...prev, vehicleImage: url }));
+            onChange(url); // ✅ only notify parent
           }
 
           setUploading(false);
@@ -68,15 +63,12 @@ export default function VehicleSelector({ form, setForm }: VehicleSelectorProps)
                 src={preview}
                 alt="Vehicle"
                 fill
-                className="object-contain p-4" // ✅ keeps correct proportions
+                className="object-contain p-4"
               />
             </div>
-           
           </div>
         </div>
       )}
-
-
     </div>
   );
 }

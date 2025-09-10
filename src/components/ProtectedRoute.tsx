@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import LoadingScreen from "./LoadingScreen";
 import Navbar from "./Navbar";
 import toast from "react-hot-toast";
+import { logout } from "@/lib/auth/logout";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -19,12 +20,32 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     email: "john.doe@example.com",
   };
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
     // logout logic
     toast.success("Logged out successfully");
     setAuthorized(false);
     router.push("/login");
-  }, [router]);
+     if (authorized) return;
+      setAuthorized(true);
+  
+      const toastId = toast.loading("Signing out...");
+  
+      try {
+        await logout();
+  
+        toast.success("Signed out successfully ✅", { id: toastId });
+  
+        // 🔹 Redirect to login after a short delay for smooth UX
+        setTimeout(() => {
+          router.push("/login");
+        }, 600);
+      } catch (err) {
+        console.error("Logout failed:", err);
+        toast.error("Logout failed. Please try again ❌", { id: toastId });
+      } finally {
+        setAuthorized(false);
+      }
+  }, [router,authorized]);
 
   useEffect(() => {
     async function checkAuth() {

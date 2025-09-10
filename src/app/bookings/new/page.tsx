@@ -72,7 +72,6 @@ export default function NewBookingPage() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setLoading(true);
-
         const res = await fetch("/api/bookings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -198,7 +197,6 @@ export default function NewBookingPage() {
                             />
                         </div> */}
 
-
                         {/* Row 1: Rental Company & Confirmation Number */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
@@ -247,11 +245,10 @@ export default function NewBookingPage() {
                         {/* Row 2: Vehicle Selection (full width) */}
                         <div className="mb-6">
                             <VehicleSelector
-                                form={{
-                                    vehicleImage: form.vehicleImage,
-                                }}
-                                setForm={(vehicleData) => setForm({ ...form, ...vehicleData })}
+                                value={form.vehicleImage}
+                                onChange={(url) => setForm((prev) => ({ ...prev, vehicleImage: url }))}
                             />
+
                         </div>
 
                         {/* Row 3: Location and Date/Time Details */}

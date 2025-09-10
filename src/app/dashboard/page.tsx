@@ -49,7 +49,7 @@ type SortDirection = "ascending" | "descending";
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [activeTab, setActiveTab] = useState<BookingStatus>("BOOKED");
+  const [activeTab, setActiveTab] = useState<BookingStatus>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: SortableField;

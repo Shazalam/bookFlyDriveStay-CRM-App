@@ -4,8 +4,7 @@ export interface BookingTemplateData {
   phoneNumber?: string;
   rentalCompany?: string;
   vehicleImage?: string;
-  vehicleType?: string;
-  vehicleCategory?: string;
+  vehicleType?: string; // Added this property based on its usage in the template
   total?: number;
   mco?: number;
   payableAtPickup?: number;
@@ -20,7 +19,7 @@ export interface BookingTemplateData {
   cardExpiry?: string;
   billingAddress?: string;
   salesAgent?: string;
-  confirmationNo?: string;
+  confirmationNumber?: string;
 }
 
 export const bookingTemplate = (data: BookingTemplateData) => `
@@ -50,17 +49,16 @@ export const bookingTemplate = (data: BookingTemplateData) => `
 
                 <!-- Vehicle Details -->
                 <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin:14px 0;">
-                  <div style="font-size:15px;font-weight:700;margin-bottom:6px;">🚘 Vehicle Details</div>
+                  <div style="font-size:15px;font-weight:700;margin-bottom:6px;">🚘 Rental Car Overview</div>
                    <img
                   src="${data.vehicleImage || "https://wallpapers.com/images/featured/4k-car-g6a4f0e15hkua5oa.jpg"}"
                   alt="${data.vehicleType || "Rental Vehicle"}"
                   style="display:block;width:100%;height:auto;border:0;max-height:320px;object-fit:cover"
                 />
                   <div style="font-size:14px;line-height:1.5;">
-                    <div><strong>Type:</strong> ${data.vehicleType || "—"}</div>
                     <div><strong>Rental Company:</strong> ${data.rentalCompany || "—"}</div>
-                    ${data.confirmationNo
-    ? `<div><strong>Confirmation:</strong> #${data.confirmationNo}</div>`
+                    ${data.confirmationNumber
+    ? `<div><strong>Confirmation:</strong> #${data.confirmationNumber}</div>`
     : ""}
                   </div>
                 </div>
@@ -68,19 +66,20 @@ export const bookingTemplate = (data: BookingTemplateData) => `
                 <!-- Payment Breakdown -->
                 <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin:14px 0;">
                   <div style="font-size:15px;font-weight:700;margin-bottom:8px;">💳 Payment Breakdown</div>
+                 <div style="margin-top:8px;font-weight:700;">🚗 Car Rental - Total: $${Number(data.total || 0).toFixed(2)}</div>
+                    <p>This amount has been split into two charges:</p>
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
                     <tr>
-                      <td style="padding:6px 0;">${Number(data.mco || 0).toFixed(2)} USD – Charged under <strong>BookFlyDriveStay Car Rental</strong></td>
+                      <td style="padding:6px 0;">1. ${Number(data.mco || 0).toFixed(2)} USD – Charged under <strong>BookFlyDriveStay Car Rental</strong></td>
                     </tr>
                     <tr>
-                      <td style="padding:6px 0;">${Number(data.payableAtPickup || 0).toFixed(2)} USD – Charged under <strong>${data.rentalCompany || "Car Rental Partner"}</strong></td>
+                      <td style="padding:6px 0;">2. ${Number(data.payableAtPickup || 0).toFixed(2)} USD – Charged under <strong>${data.rentalCompany || "Car Rental Partner"}</strong></td>
                     </tr>
                   </table>
-                  <div style="margin-top:8px;font-weight:700;">Total Car Rental Cost: $${Number(data.total || 0).toFixed(2)}</div>
                 </div>
 
                 <!-- Itinerary -->
-                <div style="margin:16px 0 8px;font-size:15px;font-weight:700;">📅 Car Rental Itinerary</div>
+                <div style="margin:16px 0 8px;font-size:15px;font-weight:700;">📅 Reservation Details</div>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
                   <tr>
                     <td valign="top" style="width:50%;padding:8px;border:1px solid #e5e7eb;">
@@ -109,10 +108,21 @@ export const bookingTemplate = (data: BookingTemplateData) => `
                   Billing Address: ${data.billingAddress || "—"}
                 </div>
 
-                <!-- Travel advisory -->
-                <div style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#4b5563;">
-                   Please be aware of any coronavirus (COVID-19) travel advisories and review updates from the World Health Organization (WHO)..
-                  <a href="https://www.who.int/emergencies/diseases/novel-coronavirus-2019/travel-advice" style="color:#4f46e5;text-decoration:none;">Find out more</a>.
+                   <!-- [START] UPDATED Travel Advisory with Emoji Icon -->
+                <div style="margin:16px 0 0; background-color:#ffecd1; border-radius:8px; padding:12px 16px; border:1px solid #fce1b3;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                    <tr>
+                      <!-- Emoji Icon Cell -->
+                     <td valign="top" style="width:28px; font-size:18px; line-height:1.4;">
+  ⓘ
+</td>
+                      <!-- Text Cell -->
+                      <td valign="top" style="font-size:13px; line-height:1.6; color:#856404; font-family:Arial,Helvetica,sans-serif;">
+                        Please be aware of any coronavirus (COVID-19) travel advisories and review updates from the World Health Organization (WHO).
+                        <a href="https://www.who.int/emergencies/diseases/novel-coronavirus-2019/travel-advice" style="color:#bf7c00; text-decoration:none; font-weight:bold;">Find out more</a>.
+                      </td>
+                    </tr>
+                  </table>
                 </div>
 
                 <!-- Signature / Consent -->
@@ -122,28 +132,40 @@ export const bookingTemplate = (data: BookingTemplateData) => `
                   For any queries, call <a href="tel:+18556133131" style="color:#4f46e5;text-decoration:none;">+1 (855) 613-3131</a>.
                 </p>
 
-                <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#4b5563;">
-                  Your e-Voucher will be emailed within 24 hours (after credit-card verification). We value your business and
-                  look forward to serving your travel needs in the near future.
+                  <!-- Closing -->
+                <p style="margin:16px 0 0;font-size:14px;line-height:1.6;">
+                  Thanks & Regards!,<br/>
+                  <strong style="color:#0f740f;">${data.salesAgent || "Sales Team"}</strong><br/>
+                 (Reservations Desk) 
                 </p>
 
                 <!-- Closing -->
-                <p style="margin:16px 0 0;font-size:14px;">
-                  Thanks &amp; Regards,<br/>
-                  <strong>${data.salesAgent || "Reservations Desk"}</strong><br/>
-                  Reservations Desk
-                </p>
-
-                <!-- CHANGES / CANCELLATION -->
-                <div style="margin:18px 0 4px;font-size:15px;font-weight:700;">CHANGES / CANCELLATION</div>
-                <div style="font-size:13px;line-height:1.7;color:#4b5563;">
-                  <strong>AM Credit Card Policy:</strong> The driver must present a valid driver license and a credit card in his/her name upon pick-up.
-                  A credit-card deposit is required by the rental company; please ensure sufficient funds are available on the card. <br/>
-                  <strong>Debit Card Policy:</strong> Debit cards are not accepted for payment or for qualification at time of pick-up for most locations.
-                  See Important Rental Information for complete debit-card policy. <br/>
-                  <strong>Car Rental Notice:</strong> The total estimated car-rental cost includes government taxes and fees. Actual total cost may vary
-                  based on additional items added or services used.
+                  <!-- [START] CORRECTED SIGNATURE AND CONTACT INFO -->
+                <div style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#4b5563;">
+                  <p style="margin:0;">BookFlyDriveStay</p>
+                  
+                  <!-- Styled Horizontal Rule -->
+                  <hr style="width:100%; border:0; border-top:1px solid #e0e0e0; margin:3px 0;" />
+                  
+                  <p style="margin:0;">
+                    <strong style="color:#111827;">Toll-free (24/7):</strong> +1 (855) 613-3131
+                  </p>
                 </div>
+
+                <!-- [START] HIGHLIGHTED CHANGES / CANCELLATION SECTION -->
+                <div style="margin-top:20px;padding:14px 16px;background-color:#ffecd1;border-radius:8px;border:1px solid #e5e7eb;">
+                    <div style="font-size:15px;font-weight:700;color:#111827;text-align:center">CHANGES / CANCELLATION</div>
+                    <div style="margin-top:8px;font-size:13px;line-height:1.7;color:#4b5563;">
+                        <strong>AM Credit Card Policy:</strong> The driver must present a valid driver license and a credit card in his/her name upon pick-up.
+                        A credit-card deposit is required by the rental company; please ensure sufficient funds are available on the card. <br/>
+                        <strong>Debit Card Policy:</strong> Debit cards are not accepted for payment or for qualification at time of pick-up for most locations.
+                        See Important Rental Information for complete debit-card policy. <br/>
+                        <strong>Car Rental Notice:</strong> The total estimated car-rental cost includes government taxes and fees. Actual total cost may vary
+                        based on additional items added or services used.
+                    </div>
+                </div>
+                <!-- [END] HIGHLIGHTED CHANGES / CANCELLATION SECTION -->
+
               </td>
             </tr>
 

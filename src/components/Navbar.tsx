@@ -4,6 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import {
   FiPlus,
   FiLogOut,
@@ -26,6 +27,7 @@ interface NavbarProps {
 
 export default function Navbar({ user, onLogout }: NavbarProps) {
   const pathname = usePathname();
+
 
   // Don't render navbar on auth pages
   const isAuthPage = pathname === "/login" || pathname === "/register";
@@ -125,7 +127,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   <div className="border-t border-gray-200 my-1"></div>
                   <button
                     onClick={onLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50 cursor-pointer"
                   >
                     <FiLogOut className="w-4 h-4 mr-2" />
                     Sign out
