@@ -8,47 +8,25 @@ import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
 import { bookingTemplate, BookingTemplateData } from "@/lib/email/templates/booking";
 import Modal from "@/components/Modal";
-
-interface Booking {
-    _id: string;
-    fullName: string;
-    email: string;
-    phoneNumber: string;
-    rentalCompany: string;
-    confirmationNumber: string;
-    vehicleImage: string;
-    total: number;
-    mco: number;
-    payableAtPickup: number;
-    pickupDate: string;
-    dropoffDate: string;
-    pickupTime: string;
-    dropoffTime: string;
-    pickupLocation: string;
-    dropoffLocation: string;
-    cardLast4: string;
-    expiration: string;
-    billingAddress: string;
-    salesAgent: string;
-    status: "BOOKED" | "MODIFIED" | "CANCELLED";
-    createdAt: string;
-    history?: { date: string; message: string }[];
-}
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
+import { fetchBookingById } from "@/app/store/slices/bookingSlice";
+import ErrorComponent from "@/components/ErrorComponent";
 
 export default function BookingDetailPage() {
     const { id } = useParams();
-    const [booking, setBooking] = useState<Booking | null>(null);
-    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("details");
     const [expandedSections, setExpandedSections] = useState({
         description: true,
         contact: true,
         company: true
     });
+
     // 2. Rename states for clarity
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [emailPreviewHtml, setEmailPreviewHtml] = useState("");
     const [isSendingEmail, setIsSendingEmail] = useState(false); // State for loading indicator
+    const dispatch = useAppDispatch();
+    const { currentBooking: booking, loading, error } = useAppSelector((state) => state.booking);
 
     // 3. Update the handleSend function to open the modal
     const handleSend = async (type: string) => {
@@ -132,23 +110,12 @@ export default function BookingDetailPage() {
     };
 
     useEffect(() => {
-        async function fetchBooking() {
-            try {
-                setLoading(true);
-                const res = await fetch(`/api/bookings/${id}`, { credentials: "include" });
-                if (!res.ok) throw new Error("Failed to load booking");
-                const data = await res.json();
-                setBooking(data.booking);
-            } catch (err: unknown) {
-                console.error("Error fetching booking:", err);
-                const message = err instanceof Error ? err.message : "Error loading booking";
-                toast.error(message);
-            } finally {
-                setLoading(false);
-            }
+        if (id) {
+            dispatch(fetchBookingById(id as string))
+                .unwrap()
+                .catch((err) => toast.error(err));
         }
-        fetchBooking();
-    }, [id]);
+    }, [id, dispatch]);
 
     const toggleSection = (section: string) => {
         setExpandedSections(prev => ({
@@ -170,9 +137,8 @@ export default function BookingDetailPage() {
         }).replace(/(am|pm)/i, match => match.toUpperCase());
     };
 
-    if (loading) return (
-        <LoadingScreen />
-    );
+    if (loading) return <LoadingScreen />;
+    if (error) return <ErrorComponent />;
 
     if (!booking) return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -461,43 +427,59 @@ export default function BookingDetailPage() {
                             )}
 
 
-
-
                             {activeTab === "timeline" && (
                                 <div>
                                     <h2 className="text-lg font-semibold text-gray-800 mb-4">History</h2>
 
-                                    <div className="mb-6">
-                                        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">YESTERDAY</h3>
+                                    {booking.timeline && booking.timeline.length > 0 ? (
+                                        <div>
+                                            
+                                            <div className="mb-6">
+                                                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                                                    Recent Activity
+                                                </h3>
 
-                                        <div className="space-y-4 pl-4 border-l-2 border-blue-200">
-                                            {booking.history?.length ? (
-                                                booking.history.map((h, idx) => (
-                                                    <div key={idx} className="relative">
-                                                        <div className="absolute -left-4 top-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                                            <FiCheckCircle className="text-blue-600" />
-                                                        </div>
-                                                        <div className="ml-6 p-4 bg-blue-50 rounded-lg">
-                                                            <p className="text-sm font-medium text-gray-900">{new Date(h.date).toLocaleTimeString()}</p>
-                                                            <p className="text-sm text-gray-600">Stage updated by system</p>
-                                                            <p className="text-sm text-blue-800 font-medium mt-1">{h.message}</p>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="relative">
-                                                    <div className="absolute -left-4 top-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                                        <FiCheckCircle className="text-blue-600" />
-                                                    </div>
-                                                    <div className="ml-6 p-4 bg-blue-50 rounded-lg">
-                                                        <p className="text-sm font-medium text-gray-900">11:58 PM</p>
-                                                        <p className="text-sm text-gray-600">Stage updated by system</p>
-                                                        <p className="text-sm text-blue-800 font-medium mt-1">Booking created</p>
-                                                    </div>
+                                                <div className="space-y-4 pl-4 border-l-2 border-blue-200">
+                                                    {booking.timeline.map((event, index) => {
+                                                        const eventDate = new Date(event.date);
+
+                                                        return (
+                                                            <div key={index} className="relative">
+                                                                {/* Icon on timeline */}
+                                                                <div className="absolute -left-4 top-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                                    <FiCheckCircle className="text-blue-600" />
+                                                                </div>
+
+                                                                {/* Content */}
+                                                                <div className="ml-6 p-4 bg-blue-50 rounded-lg">
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {eventDate.toLocaleDateString()} at{" "}
+                                                                        {eventDate.toLocaleTimeString([], {
+                                                                            hour: "2-digit",
+                                                                            minute: "2-digit",
+                                                                        })}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-600">{event.message}</p>
+                                                                    {/* <p className="text-sm text-blue-800 font-medium mt-1">
+                                                                        {event.message}
+                                                                    </p> */}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                            <FiClock className="mx-auto h-12 w-12 text-gray-400" />
+                                            <h3 className="mt-2 text-sm font-medium text-gray-900">No timeline events</h3>
+                                            <p className="mt-1 text-sm text-gray-500">
+                                                Activity will appear here as changes are made to this booking.
+                                            </p>
+                                        </div>
+                                    )}
+
                                 </div>
                             )}
 

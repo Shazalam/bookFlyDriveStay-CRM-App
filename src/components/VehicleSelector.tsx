@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 interface VehicleSelectorProps {
@@ -11,6 +11,10 @@ interface VehicleSelectorProps {
 export default function VehicleSelector({ value, onChange }: VehicleSelectorProps) {
   const [preview, setPreview] = useState(value || "");
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (value !== "") setPreview(value)
+  }, [value])
 
   async function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
     const items = e.clipboardData.items;

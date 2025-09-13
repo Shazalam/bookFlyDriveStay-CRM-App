@@ -85,6 +85,13 @@ export async function POST(req: Request) {
       salesAgent: data.salesAgent || "Unknown Agent",
       agentId: decoded.id, // from token
       status: data.status || "BOOKED",
+      // Add initial timeline entry for new booking
+      timeline: [
+        {
+          date: new Date().toISOString(),
+          message: "New booking created"
+        }
+      ]
     };
 
     // ✅ Save booking

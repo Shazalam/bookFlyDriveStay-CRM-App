@@ -19,9 +19,21 @@ export interface IBooking extends Document {
   cardLast4: string;
   expiration: string;
   billingAddress: string;
+  dateOfBirth: string;
   salesAgent: string;
   agentId: Types.ObjectId;  // 🔑 reference
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
+  // Add timeline field
+  timeline: {
+    date: string;
+    message: string;
+  }[];
+  // Add notes field
+  notes: {
+    text: string;
+    createdAt: Date;
+    createdBy: Types.ObjectId;
+  }[];
 }
 
 const BookingSchema = new Schema<IBooking>(
@@ -47,6 +59,43 @@ const BookingSchema = new Schema<IBooking>(
     salesAgent: { type: String, required: true },
     agentId: { type: Schema.Types.ObjectId, ref: "Agent", required: true }, // 🔑 reference
     status: { type: String, enum: ["BOOKED", "MODIFIED", "CANCELLED"], default: "BOOKED" },
+    // Add timeline field (mandatory)
+    timeline: {
+      type: [
+        {
+          date: {
+            type: String,
+            required: true
+          },
+          message: {
+            type: String,
+            required: true
+          }
+        }
+      ],
+      required: true,
+      default: []
+    },
+    // Add notes field (optional)
+    notes: {
+      type: [
+        {
+          text: {
+            type: String,
+            required: true
+          },
+          createdAt: {
+            type: Date,
+            default: Date.now
+          },
+          createdBy: {
+            type: Schema.Types.ObjectId,
+            ref: "Agent"
+          }
+        }
+      ],
+      default: []
+    }
   },
   { timestamps: true }
 );

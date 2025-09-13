@@ -6,10 +6,10 @@ import { FiX, FiLoader } from 'react-icons/fi';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: () => void; // New prop for the submit action
+  onSubmit: () => void;
   title: string;
   children: ReactNode;
-  isSubmitting?: boolean; // Optional prop to show a loading state
+  isSubmitting?: boolean;
 }
 
 export default function Modal({ isOpen, onClose, onSubmit, title, children, isSubmitting = false }: ModalProps) {
@@ -19,19 +19,23 @@ export default function Modal({ isOpen, onClose, onSubmit, title, children, isSu
         onClose();
       }
     };
-    window.addEventListener('keydown', handleEsc);
+    
+    if (isOpen) {
+      window.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+    }
 
     return () => {
       window.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'unset'; // Re-enable scrolling when modal closes
     };
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    // Added `backdrop-blur-sm` for the blur effect
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex justify-center items-center p-4 transition-opacity duration-300"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center p-4"
       onClick={onClose}
     >
       <div

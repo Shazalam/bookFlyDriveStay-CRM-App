@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
+// ✅ Redux
+import Providers from "./Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,26 +25,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ProtectedRoute>{children}</ProtectedRoute>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            success: {
-              style: {
-                background: "#10b981",
-                color: "white",
-                fontWeight: "500",
+        {/* ✅ Wrap the whole app with Redux Provider */}
+        <Providers>
+          <ProtectedRoute>{children}</ProtectedRoute>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              success: {
+                style: {
+                  background: "#10b981",
+                  color: "white",
+                  fontWeight: "500",
+                },
               },
-            },
-            error: {
-              style: {
-                background: "#ef4444",
-                color: "white",
-                fontWeight: "500",
+              error: {
+                style: {
+                  background: "#ef4444",
+                  color: "white",
+                  fontWeight: "500",
+                },
               },
-            },
-          }}
-        />
+            }}
+          />
+        </Providers>
+
+
       </body>
     </html>
   );

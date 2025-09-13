@@ -28,7 +28,6 @@ interface NavbarProps {
 export default function Navbar({ user, onLogout }: NavbarProps) {
   const pathname = usePathname();
 
-
   // Don't render navbar on auth pages
   const isAuthPage = pathname === "/login" || pathname === "/register";
   if (isAuthPage) return null;
@@ -59,13 +58,15 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </Link>
 
             {/* Modification Button */}
+            {/* New Customer */}
             <Link
-              href="/bookings/modify"
+              href="/bookings/modification"
               className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-2.5 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm hover:scale-105"
             >
               <FiEdit3 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Modification</span>
             </Link>
+
 
             {/* Cancellation Button */}
             <Link
