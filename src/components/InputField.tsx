@@ -15,6 +15,7 @@ interface InputFieldProps {
   step?: string;     // optional
   disabled?: boolean;
   readOnly?: boolean;
+  title?:""
 }
 
 export default function InputField({
@@ -28,6 +29,7 @@ export default function InputField({
   maxLength,
   min,
   step,
+  title,
   disabled = false,
   readOnly = false,     // ✅ added here
 }: InputFieldProps) {
@@ -51,6 +53,7 @@ export default function InputField({
         required={required}
         min={min}
         step={step}
+        title={title}
         disabled={disabled}
         readOnly={readOnly}   // ✅ now works
         className={`w-full border border-gray-300 rounded-lg p-3 text-gray-900 placeholder-gray-400 

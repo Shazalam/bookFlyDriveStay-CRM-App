@@ -21,6 +21,7 @@ export default function NewBookingPage() {
     const id = searchParams.get("id");
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isPastBooking, setIsPastBooking] = useState(false);
 
     const [form, setForm] = useState({
         fullName: "",
@@ -44,7 +45,6 @@ export default function NewBookingPage() {
         salesAgent: "",
     });
 
-    // inside your component
     const otherInputRef = useRef<HTMLInputElement | null>(null);
 
     // Fetch booking data if ID is present in URL
@@ -81,15 +81,27 @@ export default function NewBookingPage() {
             const mco = total - payableAtPickup;
             
             if (mco >= 0) {
-                setForm(prev => ({ ...prev, mco: mco.toString() }));
+                setForm(prev => ({ ...prev, mco: mco.toFixed(2) }));
             }
-        }else {
-            setForm(prev => ({ ...prev, mco:"0" }));
+        } else {
+            setForm(prev => ({ ...prev, mco: "0.00" }));
         }
     }, [form.total, form.payableAtPickup]);
 
+    // Check if booking is in the past
+    useEffect(() => {
+        if (form.pickupDate) {
+            const pickupDate = new Date(form.pickupDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+            
+            setIsPastBooking(pickupDate < today);
+        }
+    }, [form.pickupDate]);
+
     async function fetchBookingData(bookingId: string) {
         try {
+            setLoading(true);
             const res = await fetch(`/api/bookings/${bookingId}`, {
                 credentials: "include",
             });
@@ -124,6 +136,8 @@ export default function NewBookingPage() {
         } catch (error) {
             console.error("Error fetching booking:", error);
             toast.error("Failed to load booking data");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -137,23 +151,39 @@ export default function NewBookingPage() {
         e.preventDefault();
         setLoading(true);
         
+        console.log("isEditing id =>", id)
+        console.log("isEditing =>", isEditing)
         const url = isEditing ? `/api/bookings/${id}` : "/api/bookings";
         const method = isEditing ? "PUT" : "POST";
         
-        const res = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
-        });
+        // Prepare data for submission
+        const submitData = {
+            ...form,
+            total: form.total ? parseFloat(form.total) : 0,
+            mco: form.mco ? parseFloat(form.mco) : 0,
+            payableAtPickup: form.payableAtPickup ? parseFloat(form.payableAtPickup) : 0,
+            status: isEditing ? "MODIFIED" : "BOOKED"
+        };
+        
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(submitData),
+            });
 
-        const data = await res.json();
-        setLoading(false);
+            const data = await res.json();
 
-        if (res.ok) {
-            toast.success(`Booking ${isEditing ? 'updated' : 'created'} successfully!`);
-            router.push("/dashboard");
-        } else {
-            toast.error(data.error || "Something went wrong");
+            if (res.ok) {
+                toast.success(`Booking ${isEditing ? 'updated' : 'created'} successfully!`);
+                router.push("/dashboard");
+            } else {
+                toast.error(data.error || "Something went wrong");
+            }
+        } catch (error) {
+            toast.error("Network error. Please try again.");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -174,6 +204,29 @@ export default function NewBookingPage() {
                         {isEditing ? "✏️ Edit Booking" : "✈️ Create New Booking"}
                     </h1>
                 </div>
+
+                {isPastBooking && (
+                    <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-sm font-medium text-yellow-800">
+                                    Past Booking
+                                </h3>
+                                <div className="mt-2 text-sm text-yellow-700">
+                                    <p>
+                                        You are editing a booking with a past pickup date. 
+                                        Some validations have been disabled to allow corrections.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-10">
@@ -287,8 +340,10 @@ export default function NewBookingPage() {
                                 type="date"
                                 value={form.pickupDate}
                                 onChange={handleChange}
-                                min={new Date().toISOString().split('T')[0]}
+                                min={isPastBooking ? undefined : new Date().toISOString().split('T')[0]}
                                 required
+                                readOnly={isPastBooking}
+                                title={isPastBooking ? "Cannot change past pickup date" : undefined}
                             />
 
                             <TimePicker
@@ -314,7 +369,7 @@ export default function NewBookingPage() {
                                 type="date"
                                 value={form.dropoffDate}
                                 onChange={handleChange}
-                                min={form.pickupDate || new Date().toISOString().split('T')[0]}
+                                min={form.pickupDate || (isPastBooking ? undefined : new Date().toISOString().split('T')[0])}
                                 required
                             />
 
@@ -337,22 +392,24 @@ export default function NewBookingPage() {
                             <InputField
                                 label="Total ($)"
                                 name="total"
-                                type="string"
+                                type="number"
                                 value={form.total}
                                 onChange={handleChange}
-                                placeholder="500"
+                                placeholder="500.00"
                                 required
                                 step="0.01"
+                                min="0"
                             />
                            
                             <InputField
                                 label="Payable at Pickup ($)"
                                 name="payableAtPickup"
-                                type="string"
+                                type="number"
                                 value={form.payableAtPickup}
                                 onChange={handleChange}
-                                placeholder="200"
+                                placeholder="200.00"
                                 step="0.01"
+                                min="0"
                             />
 
                              <InputField
@@ -361,7 +418,7 @@ export default function NewBookingPage() {
                                 type="number"
                                 value={form.mco}
                                 onChange={handleChange}
-                                placeholder="MCO Reference"
+                                placeholder="300.00"
                                 readOnly
                                 step="0.01"
                             />
@@ -373,6 +430,7 @@ export default function NewBookingPage() {
                                 onChange={handleChange}
                                 placeholder="1234"
                                 maxLength={4}
+                                required
                             />
                             <InputField
                                 label="Expiration Date"
@@ -380,6 +438,7 @@ export default function NewBookingPage() {
                                 type="month"
                                 value={form.expiration}
                                 onChange={handleChange}
+                                required
                             />
                             <div className="md:col-span-2 lg:col-span-5">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -392,6 +451,7 @@ export default function NewBookingPage() {
                                     placeholder="123 Main St, New York, NY"
                                     rows={3}
                                     className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                                    required
                                 />
                             </div>
                         </div>

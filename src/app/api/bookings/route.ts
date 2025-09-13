@@ -21,7 +21,6 @@ export async function GET(req: Request) {
     return apiResponse({ error: message }, 500);
   }
 }
-
 // ✅ Required fields for booking
 const REQUIRED_FIELDS = [
   "fullName",
@@ -69,7 +68,7 @@ export async function POST(req: Request) {
       phoneNumber: data.phoneNumber,
       rentalCompany: data.rentalCompany,
       confirmationNumber: data.confirmationNumber,
-      vehicleImage: data.vehicleImage || "", // ensure empty string if not provided
+      vehicleImage: data.vehicleImage || "",
       total: data.total ? Number(data.total) : 0,
       mco: data.mco ? Number(data.mco) : 0,
       payableAtPickup: data.payableAtPickup ? Number(data.payableAtPickup) : 0,
@@ -83,7 +82,7 @@ export async function POST(req: Request) {
       expiration: data.expiration,
       billingAddress: data.billingAddress,
       salesAgent: data.salesAgent || "Unknown Agent",
-      agentId: decoded.id, // from token
+      agentId: decoded.id,
       status: data.status || "BOOKED",
       // Add initial timeline entry for new booking
       timeline: [

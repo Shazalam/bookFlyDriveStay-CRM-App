@@ -26,7 +26,9 @@ export interface IBooking extends Document {
   // Add timeline field
   timeline: {
     date: string;
-    message: string;
+    message: {
+      text: string;
+    }[];
   }[];
   // Add notes field
   notes: {
