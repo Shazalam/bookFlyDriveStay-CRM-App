@@ -26,7 +26,8 @@ export interface IBooking extends Document {
   // Add timeline field
   timeline: {
     date: string;
-    message: {
+    message: string;
+    changes: {
       text: string;
     }[];
   }[];
@@ -62,17 +63,17 @@ const BookingSchema = new Schema<IBooking>(
     agentId: { type: Schema.Types.ObjectId, ref: "Agent", required: true }, // 🔑 reference
     status: { type: String, enum: ["BOOKED", "MODIFIED", "CANCELLED"], default: "BOOKED" },
     // Add timeline field (mandatory)
+    // Updated timeline field
     timeline: {
       type: [
         {
-          date: {
-            type: String,
-            required: true
-          },
-          message: {
-            type: String,
-            required: true
-          }
+          date: { type: String, required: true },
+          message: { type: String, required: true },
+          changes: [
+            {
+              text: { type: String, required: true }
+            }
+          ]
         }
       ],
       required: true,

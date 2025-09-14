@@ -33,11 +33,12 @@ interface Booking {
   expiration: string;
   billingAddress: string;
   salesAgent: string;
+  status: string;
   dateOfBirth?: string; // Make dateOfBirth optional
 }
 
 const editableGroups = {
-  Customer: ["fullName"],
+  Customer: ["fullName", "phoneNumber"],
   Vehicle: ["vehicleImage"],
   "Locations & Dates": [
     "pickupLocation",
@@ -79,6 +80,7 @@ const emptyForm: Booking = {
   expiration: "",
   billingAddress: "",
   salesAgent: "",
+  status: "MODIFIED",
   dateOfBirth: "",
 };
 
@@ -91,9 +93,9 @@ export default function ModifyBookingPage() {
   const dispatch = useAppDispatch();
   const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
 
-    // Initialize form with empty values
+  // Initialize form with empty values
   const [form, setForm] = useState<Booking>(emptyForm);
-  
+
   // Reset editable state when id changes
   const [editable, setEditable] = useState<Record<string, boolean>>(() =>
     Object.values(editableGroups)
@@ -101,7 +103,7 @@ export default function ModifyBookingPage() {
       .reduce((acc, field) => ({ ...acc, [field]: false }), {})
   );
 
-// Fetch booking data when component mounts or id changes
+  // Fetch booking data when component mounts or id changes
   useEffect(() => {
     if (id) {
       dispatch(fetchBookingById(id))
@@ -121,7 +123,6 @@ export default function ModifyBookingPage() {
     }
   }, [id, dispatch]);
 
-  
   // Update form when booking data is available
   useEffect(() => {
     if (currentBooking && id) {
@@ -146,6 +147,7 @@ export default function ModifyBookingPage() {
         expiration: currentBooking.expiration || "",
         billingAddress: currentBooking.billingAddress || "",
         salesAgent: currentBooking.salesAgent || "",
+        status: "MODIFIED",
         dateOfBirth: (currentBooking as any).dateOfBirth || "",
       });
     } else if (!id) {
@@ -164,7 +166,7 @@ export default function ModifyBookingPage() {
 
   const allFields = Object.values(editableGroups).flat();
   const allSelected = allFields.every((f) => editable[f]);
-
+  console.log("allFields =>", allFields)
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -195,6 +197,8 @@ export default function ModifyBookingPage() {
       }
     });
 
+    console.log("fieldsToUpdate =>", fieldsToUpdate)
+
     const method = id ? "PUT" : "POST";
     const url = id ? `/api/bookings/${id}` : "/api/bookings";
 
@@ -208,18 +212,18 @@ export default function ModifyBookingPage() {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success("✅ Booking saved successfully!");
+        toast.success(" Booking saved successfully!");
         router.push("/dashboard");
       } else {
-        toast.error(data.error || "❌ Failed to save booking");
+        toast.error(data.error || " Failed to save booking");
       }
     } catch (error) {
-      toast.error("❌ Network error. Please try again.");
+      toast.error("Network error. Please try again.");
     }
   };
 
   if (loading) return <LoadingScreen />;
-  
+
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-gray-50 to-gray-100 px-6 py-10">
@@ -233,7 +237,7 @@ export default function ModifyBookingPage() {
           Back
         </button>
         <h1 className="text-3xl font-bold text-gray-900 flex-1">
-          { `✏️ Modify Booking (${id ? "Existing Customer" : "New Customer"}) `}
+          {`✏️ Modify Booking (${id ? "Existing Customer" : "New Customer"}) `}
         </h1>
       </div>
 
@@ -305,7 +309,7 @@ export default function ModifyBookingPage() {
                 type="date"
                 value={form.dateOfBirth || ""}
                 onChange={handleChange}
-                readOnly={!editable.dateOfBirth}
+
               />
             </div>
           </section>

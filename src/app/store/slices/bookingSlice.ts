@@ -23,7 +23,11 @@ export interface Booking {
   salesAgent: string;
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
   createdAt: string;
-  timeline?: { date: string; message: string }[];
+  timeline?: {
+    date: string; message: string, changes: {
+      text: string;
+    }[]
+  }[];
 }
 
 interface BookingState {

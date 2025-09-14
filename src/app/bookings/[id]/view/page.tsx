@@ -425,61 +425,62 @@ export default function BookingDetailPage() {
                                     </div>
                                 </div>
                             )}
-
-
                             {activeTab === "timeline" && (
                                 <div>
-                                    <h2 className="text-lg font-semibold text-gray-800 mb-4">History</h2>
+                                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Timeline</h2>
 
                                     {booking.timeline && booking.timeline.length > 0 ? (
-                                        <div>
-                                            
-                                            <div className="mb-6">
-                                                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                                                    Recent Activity
-                                                </h3>
+                                        <div className="space-y-6">
+                                            {booking.timeline.map((event, index) => {
+                                                const eventDate = new Date(event.date);
+                                                const isLast = index === booking?.timeline.length - 1;
+                                                console.log("timeline =>", booking)
+                                                return (
+                                                    <div key={index} className="relative">
+                                                        {/* Timeline connector */}
+                                                        {!isLast && (
+                                                            <div className="absolute left-4 top-8 h-8 w-0.5 bg-blue-200"></div>
+                                                        )}
 
-                                                <div className="space-y-4 pl-4 border-l-2 border-blue-200">
-                                                    {booking.timeline.map((event, index) => {
-                                                        const eventDate = new Date(event.date);
-
-                                                        return (
-                                                            <div key={index} className="relative">
-                                                                {/* Icon on timeline */}
-                                                                <div className="absolute -left-4 top-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                                                    <FiCheckCircle className="text-blue-600" />
-                                                                </div>
-
-                                                                {/* Content */}
-                                                                <div className="ml-6 p-4 bg-blue-50 rounded-lg">
-                                                                    <p className="text-sm font-medium text-gray-900">
-                                                                        {eventDate.toLocaleDateString()} at{" "}
-                                                                        {eventDate.toLocaleTimeString([], {
-                                                                            hour: "2-digit",
-                                                                            minute: "2-digit",
-                                                                        })}
-                                                                    </p>
-                                                                    <p className="text-sm text-gray-600">{event.message}</p>
-                                                                    {/* <p className="text-sm text-blue-800 font-medium mt-1">
-                                                                        {event.message}
-                                                                    </p> */}
+                                                        <div className="flex items-start">
+                                                            <div className="flex-shrink-0">
+                                                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                                    <FiCheckCircle className="text-blue-600 w-4 h-4" />
                                                                 </div>
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
+
+                                                            <div className="ml-4 flex-1">
+                                                                <div className="flex items-center justify-between">
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="mt-1 bg-blue-50 p-3 rounded-lg">
+                                                                    <p className="text-sm font-medium text-blue-800 mb-2">
+                                                                        {event.message}
+                                                                    </p>
+                                                                    {event.changes && event.changes.length > 0 && (
+                                                                        <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                                                                            {event.changes.map((change, changeIndex) => (
+                                                                                <li key={changeIndex}>{change.text}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="text-center py-8 bg-gray-50 rounded-lg">
                                             <FiClock className="mx-auto h-12 w-12 text-gray-400" />
                                             <h3 className="mt-2 text-sm font-medium text-gray-900">No timeline events</h3>
-                                            <p className="mt-1 text-sm text-gray-500">
-                                                Activity will appear here as changes are made to this booking.
-                                            </p>
+                                            <p className="mt-1 text-sm text-gray-500">Activity will appear here as changes are made to this booking.</p>
                                         </div>
                                     )}
-
                                 </div>
                             )}
 

@@ -162,7 +162,7 @@ export default function NewBookingPage() {
             total: form.total ? parseFloat(form.total) : 0,
             mco: form.mco ? parseFloat(form.mco) : 0,
             payableAtPickup: form.payableAtPickup ? parseFloat(form.payableAtPickup) : 0,
-            status: isEditing ? "MODIFIED" : "BOOKED"
+            status:"BOOKED"
         };
         
         try {
@@ -343,7 +343,6 @@ export default function NewBookingPage() {
                                 min={isPastBooking ? undefined : new Date().toISOString().split('T')[0]}
                                 required
                                 readOnly={isPastBooking}
-                                title={isPastBooking ? "Cannot change past pickup date" : undefined}
                             />
 
                             <TimePicker
