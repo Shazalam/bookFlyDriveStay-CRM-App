@@ -9,9 +9,9 @@ export interface Booking {
   rentalCompany: string;
   confirmationNumber: string;
   vehicleImage: string;
-  total: number;
-  mco: number;
-  payableAtPickup: number;
+  total: string;
+  mco: string;
+  payableAtPickup: string;
   pickupDate: string;
   dropoffDate: string;
   pickupTime: string;
@@ -57,8 +57,10 @@ export const saveBooking = createAsyncThunk<
     const url = id ? `/api/bookings/${id}` : "/api/bookings";
 
     // For updates, remove _id from the data
-    const dataToSend = id ? (({ _id, ...rest }) => rest)(formData) : formData;
-
+    const dataToSend = id ? 
+      Object.fromEntries(Object.entries(formData).filter(([key]) => key !== '_id')) : 
+      formData;
+      
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },

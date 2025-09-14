@@ -90,27 +90,6 @@ export default function DashboardPage() {
     fetchBookings();
   }, []);
 
-  // const cancelBooking = useCallback(async (id: string) => {
-  //   if (!confirm("Are you sure you want to cancel this booking?")) return;
-
-  //   try {
-  //     const res = await fetch(`/api/bookings/${id}`, {
-  //       method: "DELETE",
-  //       credentials: "include",
-  //     });
-
-  //     if (!res.ok) throw new Error("Failed to cancel booking");
-
-  //     setBookings((prev) =>
-  //       prev.map((b) => (b._id === id ? { ...b, status: "CANCELLED" } : b))
-  //     );
-  //     toast.success("Booking cancelled successfully");
-  //   } catch (err: unknown) {
-  //     const message = err instanceof Error ? err.message : "Error cancelling booking";
-  //     toast.error(message);
-  //   }
-  // }, []);
-
   const cancelBooking = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/bookings/${id}`, {
@@ -270,7 +249,7 @@ export default function DashboardPage() {
     ],
     [statusCounts]
   );
-
+  
   if (loading) return <LoadingScreen />;
 
   return (
@@ -496,7 +475,7 @@ function BookingRow({
           <div className="text-sm text-gray-900">{booking.rentalCompany}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm font-medium text-gray-900">${booking.total.toFixed(2)}</div>
+          <div className="text-sm font-medium text-gray-900">${Number(booking.total).toFixed(2)}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="text-sm text-gray-900">{new Date(booking.pickupDate).toLocaleDateString()}</div>
@@ -575,8 +554,8 @@ function BookingRow({
                   Rental Details
                 </h4>
                 <div className="text-sm">
-                  <div className="text-gray-600">MCO: ${booking.mco}</div>
-                  <div className="text-gray-600">Payable at Pickup: ${booking.payableAtPickup.toFixed(2)}</div>
+                  <div className="text-gray-600">MCO: ${Number(booking.mco)}</div>
+                  <div className="text-gray-600">Payable at Pickup: ${Number(booking.payableAtPickup).toFixed(2)}</div>
                 </div>
               </div>
 

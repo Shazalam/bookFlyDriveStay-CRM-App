@@ -5,9 +5,9 @@ export interface BookingTemplateData {
   rentalCompany?: string;
   vehicleImage?: string;
   vehicleType?: string; // Added this property based on its usage in the template
-  total?: number;
-  mco?: number;
-  payableAtPickup?: number;
+  total?: string;
+  mco?: string;
+  payableAtPickup?: string;
   pickupDate?: string;
   dropoffDate?: string;
   pickupTime?: string;

@@ -8,6 +8,7 @@ import InputField from "@/components/InputField";
 import VehicleSelector from "@/components/VehicleSelector";
 import { ArrowLeft } from "lucide-react";
 import TimePicker from "@/components/TimePicker";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const rentalCompanies = [
     "Hertz", "Avis", "Sixt", "Budget", "Enterprise",
@@ -181,11 +182,14 @@ export default function NewBookingPage() {
                 toast.error(data.error || "Something went wrong");
             }
         } catch (error) {
-            toast.error("Network error. Please try again.");
+            const errorMessage = error instanceof Error ? error.message : "Network error";
+            toast.error(`Error: ${errorMessage}. Please try again.`);
         } finally {
             setLoading(false);
         }
     }
+
+    if (loading) return <LoadingScreen />;
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-6 py-10">

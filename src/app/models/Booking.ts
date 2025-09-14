@@ -7,9 +7,9 @@ export interface IBooking extends Document {
   rentalCompany: string;
   confirmationNumber: string;
   vehicleImage: string;
-  total: number;
-  mco: number;
-  payableAtPickup: number;
+  total: string;
+  mco: string;
+  payableAtPickup: string;
   pickupDate: string;
   dropoffDate: string;
   pickupTime: string;
@@ -47,9 +47,9 @@ const BookingSchema = new Schema<IBooking>(
     rentalCompany: { type: String, required: true },
     vehicleImage: { type: String, default: "" }, // ✅ ensure it always saves
     confirmationNumber: { type: String, required: true },
-    total: { type: Number },
-    mco: { type: Number, required: true },
-    payableAtPickup: { type: Number },
+    total: { type: String },
+    mco: { type: String, required: true },
+    payableAtPickup: { type: String },
     pickupDate: { type: String },
     dropoffDate: { type: String },
     pickupTime: { type: String },

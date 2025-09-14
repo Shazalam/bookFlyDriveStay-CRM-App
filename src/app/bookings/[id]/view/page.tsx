@@ -9,7 +9,7 @@ import Image from "next/image";
 import { bookingTemplate, BookingTemplateData } from "@/lib/email/templates/booking";
 import Modal from "@/components/PreviewModal";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { fetchBookingById } from "@/app/store/slices/bookingSlice";
+import { fetchBookingById, resetOperationStatus } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
 
 export default function BookingDetailPage() {
@@ -137,8 +137,17 @@ export default function BookingDetailPage() {
         }).replace(/(am|pm)/i, match => match.toUpperCase());
     };
 
+    if (error) {
+        return (
+            <ErrorComponent
+                title="Failed to Fetch the data"
+                message={error || "Unknown error occurred"}
+                onRetry={() => dispatch(resetOperationStatus())}
+            />
+        )
+    }
+
     if (loading) return <LoadingScreen />;
-    if (error) return <ErrorComponent />;
 
     if (!booking) return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -161,7 +170,7 @@ export default function BookingDetailPage() {
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between">
                             <div className="mb-4 md:mb-0">
                                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{booking.rentalCompany} ({booking.confirmationNumber})</h1>
-                                <p className="text-blue-600 font-semibold text-xl mt-1">${booking.mco.toFixed(2)} (Total - ${booking.total.toFixed(2)})</p>
+                                <p className="text-blue-600 font-semibold text-xl mt-1">${Number(booking.mco).toFixed(2)} (Total - ${Number(booking.total).toFixed(2)})</p>
                                 <div className="flex flex-wrap items-center mt-2 gap-2">
                                     <span className="text-sm text-gray-500">Created on: {new Date(booking.createdAt).toLocaleDateString()}</span>
                                 </div>
@@ -298,9 +307,9 @@ export default function BookingDetailPage() {
                                             <br />
                                             ➤ Drop-off: {booking.dropoffLocation} on {new Date(booking.dropoffDate).toLocaleDateString()}
                                             <br />
-                                            ➤ Total amount: ${booking.total.toFixed(2)}
+                                            ➤ Total amount: ${Number(booking.total).toFixed(2)}
                                             <br />
-                                            ➤ Payable at pickup: ${booking.payableAtPickup.toFixed(2)}
+                                            ➤ Payable at pickup: ${Number(booking.payableAtPickup).toFixed(2)}
                                         </p>
                                         <div className="mt-4 text-sm text-gray-500 flex items-center">
                                             <FiClock className="mr-2" />
@@ -402,8 +411,8 @@ export default function BookingDetailPage() {
                                             </h3>
 
                                             <div>
-                                                <p className="text-gray-600"><strong>Total Amount:</strong> ${booking.total.toFixed(2)}</p>
-                                                <p className="text-gray-600"><strong>Payable at Pickup:</strong> ${booking.payableAtPickup.toFixed(2)}</p>
+                                                <p className="text-gray-600"><strong>Total Amount:</strong> ${Number(booking.total).toFixed(2)}</p>
+                                                <p className="text-gray-600"><strong>Payable at Pickup:</strong> ${Number(booking.payableAtPickup).toFixed(2)}</p>
                                                 <p className="text-gray-600"><strong>MCO:</strong> ${booking.mco}</p>
                                             </div>
 

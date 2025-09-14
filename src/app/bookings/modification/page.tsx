@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { clearBooking, fetchBookingById, resetOperationStatus, saveBooking } from "@/app/store/slices/bookingSlice";
+import ErrorComponent from "@/components/ErrorComponent";
 
 const rentalCompanies = [
   "Hertz", "Avis", "Sixt", "Budget", "Enterprise",
@@ -39,7 +40,7 @@ interface Booking {
   expiration: string;
   billingAddress: string;
   salesAgent: string;
-  status: string;
+  status: "BOOKED" | "MODIFIED" | "CANCELLED";
   dateOfBirth?: string; // Make dateOfBirth optional
 }
 
@@ -85,7 +86,7 @@ const emptyForm: Booking = {
   cardLast4: "",
   expiration: "",
   billingAddress: "",
-  salesAgent: "Henry Smith",
+  salesAgent: "",
   status: "MODIFIED",
   dateOfBirth: "",
 };
@@ -100,8 +101,6 @@ export default function ModifyBookingPage() {
 
   // Initialize form with empty values
   const [form, setForm] = useState<Booking>(emptyForm);
-
-  console.log("form data =>", form)
 
   // Reset editable state when id changes
   const [editable, setEditable] = useState<Record<string, boolean>>(() =>
@@ -130,6 +129,19 @@ export default function ModifyBookingPage() {
     }
   }, [id, dispatch]);
 
+    // Fetch logged-in agent
+    useEffect(() => {
+        async function fetchUser() {
+            const res = await fetch("/api/auth/me", { credentials: "include" });
+            const data = await res.json();
+            if (data.user) {
+                setForm((prev) => ({ ...prev, salesAgent: data.user.name }));
+            }
+        }
+        fetchUser();
+    }, []);
+
+    
   // Update form when booking data is available
   useEffect(() => {
     if (currentBooking && id) {
@@ -221,57 +233,19 @@ export default function ModifyBookingPage() {
     setEditable(updated);
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-
-  //   const fieldsToUpdate: Partial<Booking> = {};
-  //   allFields.forEach((field) => {
-  //     if (editable[field as keyof Booking]) {
-  //       fieldsToUpdate[field as keyof Booking] = form[field as keyof Booking];
-  //     }
-  //   });
-
-  //   // Remove _id from the data being sent
-  //   const { _id, ...dataWithoutId } = form;
-
-  //   console.log("handle Submit form =>", dataWithoutId)
-
-  //   const method = id ? "PUT" : "POST";
-  //   const url = id ? `/api/bookings/${id}` : "/api/bookings";
-
-  //   try {
-  //     const res = await fetch(url, {
-  //       method,
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(dataWithoutId),
-  //     });
-
-  //     const data = await res.json();
-
-  //     if (res.ok) {
-  //       toast.success(" Booking saved successfully!");
-  //       router.push("/dashboard");
-  //     } else {
-  //       toast.error(data.error || " Failed to save booking");
-  //     }
-  //   } catch (error) {
-  //     toast.error("Network error. Please try again.");
-  //   }
-  // };
-
-
   // Handle form submission using Redux
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Always send full form data
-    let formData: Partial<Booking> = { ...form };
+    const formData: Partial<Booking> = { ...form };
 
     dispatch(saveBooking({
       formData,
       id: id || undefined, // If id exists, it's an update; otherwise, it's a create
     }));
   };
+
 
   // Handle side effects after operation
   useEffect(() => {
@@ -284,6 +258,17 @@ export default function ModifyBookingPage() {
       dispatch(resetOperationStatus());
     }
   }, [operation, error, router, dispatch, id]);
+
+
+  if (error) {
+    return (
+      <ErrorComponent
+        title="Failed to Create Booking"
+        message={error || "Unknown error occurred"}
+        onRetry={() => dispatch(resetOperationStatus())}
+      />
+    )
+  }
 
 
   if (loading) return <LoadingScreen />;
