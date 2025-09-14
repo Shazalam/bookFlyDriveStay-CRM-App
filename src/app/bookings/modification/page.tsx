@@ -10,7 +10,13 @@ import TimePicker from "@/components/TimePicker";
 import { ArrowLeft } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { clearBooking, fetchBookingById } from "@/app/store/slices/bookingSlice";
+import { clearBooking, fetchBookingById, resetOperationStatus, saveBooking } from "@/app/store/slices/bookingSlice";
+
+const rentalCompanies = [
+  "Hertz", "Avis", "Sixt", "Budget", "Enterprise",
+  "Alamo", "National", "Thrifty", "Dollar",
+  "Europcar", "Fox Rent A Car", "Payless", "Zipcar", "Other",
+];
 
 interface Booking {
   _id: string;
@@ -38,8 +44,8 @@ interface Booking {
 }
 
 const editableGroups = {
-  Customer: ["fullName", "phoneNumber"],
-  Vehicle: ["vehicleImage"],
+  Customer: ["fullName", "email", "phoneNumber"],
+  Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],
   "Locations & Dates": [
     "pickupLocation",
     "dropoffLocation",
@@ -50,8 +56,8 @@ const editableGroups = {
   ],
   "Payment Info": [
     "total",
-    "mco",
     "payableAtPickup",
+    "mco",
     "cardLast4",
     "expiration",
     "billingAddress",
@@ -79,7 +85,7 @@ const emptyForm: Booking = {
   cardLast4: "",
   expiration: "",
   billingAddress: "",
-  salesAgent: "",
+  salesAgent: "Henry Smith",
   status: "MODIFIED",
   dateOfBirth: "",
 };
@@ -88,13 +94,14 @@ export default function ModifyBookingPage() {
   const router = useRouter();
   const searchParams = useSearchParams(); // Use useSearchParams instead of useParams
   const id = searchParams.get("id"); // Get the id from query parameters
-  console.log("modification param =>", id);
-
   const dispatch = useAppDispatch();
-  const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
+  const { currentBooking, loading, error, operation } = useAppSelector((state) => state.booking);
+  const [isPastBooking, setIsPastBooking] = useState(false);
 
   // Initialize form with empty values
   const [form, setForm] = useState<Booking>(emptyForm);
+
+  console.log("form data =>", form)
 
   // Reset editable state when id changes
   const [editable, setEditable] = useState<Record<string, boolean>>(() =>
@@ -148,13 +155,39 @@ export default function ModifyBookingPage() {
         billingAddress: currentBooking.billingAddress || "",
         salesAgent: currentBooking.salesAgent || "",
         status: "MODIFIED",
-        dateOfBirth: (currentBooking as any).dateOfBirth || "",
+        dateOfBirth: currentBooking.dateOfBirth ?? "",
       });
     } else if (!id) {
       // Ensure form is empty when no ID is present
       setForm(emptyForm);
     }
   }, [currentBooking, id]);
+
+  // Calculate MCO when total or payableAtPickup changes
+  useEffect(() => {
+    if (form.total && form.payableAtPickup) {
+      const total = parseFloat(form.total) || 0;
+      const payableAtPickup = parseFloat(form.payableAtPickup) || 0;
+      const mco = total - payableAtPickup;
+
+      if (mco >= 0) {
+        setForm(prev => ({ ...prev, mco: mco.toFixed(2) }));
+      }
+    } else {
+      setForm(prev => ({ ...prev, mco: "0.00" }));
+    }
+  }, [form.total, form.payableAtPickup]);
+
+  // Check if booking is in the past
+  useEffect(() => {
+    if (form.pickupDate) {
+      const pickupDate = new Date(form.pickupDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+
+      setIsPastBooking(pickupDate < today);
+    }
+  }, [form.pickupDate]);
 
   // Reset form when component unmounts
   useEffect(() => {
@@ -165,8 +198,9 @@ export default function ModifyBookingPage() {
 
 
   const allFields = Object.values(editableGroups).flat();
+
   const allSelected = allFields.every((f) => editable[f]);
-  console.log("allFields =>", allFields)
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -187,40 +221,70 @@ export default function ModifyBookingPage() {
     setEditable(updated);
   };
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   const fieldsToUpdate: Partial<Booking> = {};
+  //   allFields.forEach((field) => {
+  //     if (editable[field as keyof Booking]) {
+  //       fieldsToUpdate[field as keyof Booking] = form[field as keyof Booking];
+  //     }
+  //   });
+
+  //   // Remove _id from the data being sent
+  //   const { _id, ...dataWithoutId } = form;
+
+  //   console.log("handle Submit form =>", dataWithoutId)
+
+  //   const method = id ? "PUT" : "POST";
+  //   const url = id ? `/api/bookings/${id}` : "/api/bookings";
+
+  //   try {
+  //     const res = await fetch(url, {
+  //       method,
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(dataWithoutId),
+  //     });
+
+  //     const data = await res.json();
+
+  //     if (res.ok) {
+  //       toast.success(" Booking saved successfully!");
+  //       router.push("/dashboard");
+  //     } else {
+  //       toast.error(data.error || " Failed to save booking");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Network error. Please try again.");
+  //   }
+  // };
+
+
+  // Handle form submission using Redux
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const fieldsToUpdate: Partial<Booking> = {};
-    allFields.forEach((field) => {
-      if (editable[field as keyof Booking]) {
-        fieldsToUpdate[field as keyof Booking] = form[field as keyof Booking];
-      }
-    });
+    // Always send full form data
+    let formData: Partial<Booking> = { ...form };
 
-    console.log("fieldsToUpdate =>", fieldsToUpdate)
-
-    const method = id ? "PUT" : "POST";
-    const url = id ? `/api/bookings/${id}` : "/api/bookings";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fieldsToUpdate),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(" Booking saved successfully!");
-        router.push("/dashboard");
-      } else {
-        toast.error(data.error || " Failed to save booking");
-      }
-    } catch (error) {
-      toast.error("Network error. Please try again.");
-    }
+    dispatch(saveBooking({
+      formData,
+      id: id || undefined, // If id exists, it's an update; otherwise, it's a create
+    }));
   };
+
+  // Handle side effects after operation
+  useEffect(() => {
+    if (operation === 'succeeded') {
+      toast.success(id ? "Booking updated successfully!" : "Booking created successfully!");
+      router.push("/dashboard");
+      dispatch(resetOperationStatus());
+    } else if (operation === 'failed') {
+      toast.error(error || "Failed to save booking");
+      dispatch(resetOperationStatus());
+    }
+  }, [operation, error, router, dispatch, id]);
+
 
   if (loading) return <LoadingScreen />;
 
@@ -240,6 +304,29 @@ export default function ModifyBookingPage() {
           {`✏️ Modify Booking (${id ? "Existing Customer" : "New Customer"}) `}
         </h1>
       </div>
+
+      {isPastBooking && (
+        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Past Booking
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  You are modifying a booking with a past pickup date.
+                  Some validations have been disabled to allow corrections.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="w-full max-w-7xl bg-white p-10 rounded-2xl shadow-xl grid md:grid-cols-4 gap-8">
@@ -285,7 +372,7 @@ export default function ModifyBookingPage() {
                 name="fullName"
                 value={form.fullName}
                 onChange={handleChange}
-                placeholder="John Doe"
+                placeholder="Enter FullName"
                 readOnly={!editable.fullName}
               />
               <InputField
@@ -294,6 +381,7 @@ export default function ModifyBookingPage() {
                 type="email"
                 value={form.email}
                 onChange={handleChange}
+                placeholder="Enter Email"
                 readOnly={!editable.email}
               />
               <InputField
@@ -301,6 +389,7 @@ export default function ModifyBookingPage() {
                 name="phoneNumber"
                 value={form.phoneNumber}
                 onChange={handleChange}
+                placeholder="Enter PhoneNumber"
                 readOnly={!editable.phoneNumber}
               />
               <InputField
@@ -309,31 +398,62 @@ export default function ModifyBookingPage() {
                 type="date"
                 value={form.dateOfBirth || ""}
                 onChange={handleChange}
-
               />
             </div>
           </section>
 
-          {/* Vehicle */}
-          {editable.vehicleImage && (
-            <section>
-              <h2 className="text-lg font-semibold text-indigo-700 mb-4 border-b pb-2">
-                🚗 Vehicle
-              </h2>
-              <VehicleSelector
-                value={form.vehicleImage}
-                onChange={(url) =>
-                  setForm((prev) => ({ ...prev, vehicleImage: url }))
-                }
-              />
-            </section>
-          )}
-
           {/* Locations & Dates */}
           <section>
             <h2 className="text-lg font-semibold text-indigo-700 mb-4 border-b pb-2">
-              📅 Locations & Dates
+              📅 Booking Details
             </h2>
+
+            {/* Row 1: Rental Company & Confirmation Number */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rental Company
+                </label>
+                <select
+                  name="rentalCompany"
+                  value={form.rentalCompany}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                  required
+                  disabled={!editable.rentalCompany}
+                >
+                  <option value="">Select a company</option>
+                  {rentalCompanies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <InputField
+                label="Confirmation Number"
+                name="confirmationNumber"
+                value={form.confirmationNumber}
+                onChange={handleChange}
+                placeholder="Enter Confirmation Number"
+                required
+                readOnly={!editable.confirmationNumber}
+              />
+            </div>
+
+
+            {editable.vehicleImage && (
+              <div className="mb-6">
+                <VehicleSelector
+                  value={form.vehicleImage}
+                  onChange={(url) =>
+                    setForm((prev) => ({ ...prev, vehicleImage: url }))
+                  }
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <InputField
                 label="Pickup Location"
@@ -349,8 +469,10 @@ export default function ModifyBookingPage() {
                 type="date"
                 value={form.pickupDate}
                 onChange={handleChange}
+                min={isPastBooking ? undefined : new Date().toISOString().split('T')[0]}
                 readOnly={!editable.pickupDate}
               />
+
               <TimePicker
                 label="Pickup Time"
                 name="pickupTime"
@@ -372,6 +494,7 @@ export default function ModifyBookingPage() {
                 type="date"
                 value={form.dropoffDate}
                 onChange={handleChange}
+                min={isPastBooking ? undefined : new Date().toISOString().split('T')[0]}
                 readOnly={!editable.dropoffDate}
               />
               <TimePicker
@@ -395,8 +518,17 @@ export default function ModifyBookingPage() {
                 name="total"
                 value={form.total}
                 onChange={handleChange}
-                placeholder="500"
+                placeholder="Enter Total"
                 readOnly={!editable.total}
+              />
+
+              <InputField
+                label="Payable at Pickup ($)"
+                name="payableAtPickup"
+                value={form.payableAtPickup}
+                onChange={handleChange}
+                placeholder="Enter Payable At Pickup"
+                readOnly={!editable.payableAtPickup}
               />
               <InputField
                 label="MCO"
@@ -407,19 +539,11 @@ export default function ModifyBookingPage() {
                 readOnly={!editable.mco}
               />
               <InputField
-                label="Payable at Pickup ($)"
-                name="payableAtPickup"
-                value={form.payableAtPickup}
-                onChange={handleChange}
-                placeholder="200"
-                readOnly={!editable.payableAtPickup}
-              />
-              <InputField
                 label="Card Last 4 Digits"
                 name="cardLast4"
                 value={form.cardLast4}
                 onChange={handleChange}
-                placeholder="1234"
+                placeholder="Enter Last 4 Digits"
                 maxLength={4}
                 readOnly={!editable.cardLast4}
               />
@@ -439,7 +563,7 @@ export default function ModifyBookingPage() {
                   name="billingAddress"
                   value={form.billingAddress}
                   onChange={handleChange}
-                  placeholder="123 Main St, New York, NY"
+                  placeholder="Enter Billing Address"
                   rows={3}
                   readOnly={!editable.billingAddress}
                   className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"

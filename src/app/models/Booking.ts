@@ -59,6 +59,7 @@ const BookingSchema = new Schema<IBooking>(
     cardLast4: { type: String, required: true },
     expiration: { type: String, required: true },
     billingAddress: { type: String, required: true },
+    dateOfBirth: { type: String, default: "" },
     salesAgent: { type: String, required: true },
     agentId: { type: Schema.Types.ObjectId, ref: "Agent", required: true }, // 🔑 reference
     status: { type: String, enum: ["BOOKED", "MODIFIED", "CANCELLED"], default: "BOOKED" },

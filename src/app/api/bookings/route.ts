@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     const missing = REQUIRED_FIELDS.filter(
       (field) => !data[field] || data[field].toString().trim() === ""
     );
+
     if (missing.length > 0) {
       return apiResponse(
         { error: `Missing required fields: ${missing.join(", ")}` },
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
       cardLast4: data.cardLast4,
       expiration: data.expiration,
       billingAddress: data.billingAddress,
+      dateOfBirth: data.dateOfBirth,
       salesAgent: data.salesAgent || "Unknown Agent",
       agentId: decoded.id,
       status: data.status || "BOOKED",

@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
 import { bookingTemplate, BookingTemplateData } from "@/lib/email/templates/booking";
-import Modal from "@/components/Modal";
+import Modal from "@/components/PreviewModal";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { fetchBookingById } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
@@ -433,7 +433,7 @@ export default function BookingDetailPage() {
                                         <div className="space-y-6">
                                             {booking.timeline.map((event, index) => {
                                                 const eventDate = new Date(event.date);
-                                                const isLast = index === booking?.timeline.length - 1;
+                                                const isLast = index === (booking.timeline?.length ?? 0) - 1;
                                                 console.log("timeline =>", booking)
                                                 return (
                                                     <div key={index} className="relative">

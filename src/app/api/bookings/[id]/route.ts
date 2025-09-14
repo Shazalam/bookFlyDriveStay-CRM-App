@@ -346,8 +346,6 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 //   }
 // }
 
-
-
 export async function PUT(req: Request) {
   try {
     await connectDB();
@@ -369,6 +367,7 @@ export async function PUT(req: Request) {
 
     const data = await req.json();
 
+    console.log("data ====>", data)
     // Get the existing booking
     const existingBooking = await Booking.findById(id);
     if (!existingBooking) {
@@ -386,7 +385,7 @@ export async function PUT(req: Request) {
       "pickupTime", "dropoffTime", "pickupLocation", "dropoffLocation", "cardLast4",
       "expiration", "billingAddress", "status"
     ];
-
+     
     fieldsToCheck.forEach(field => {
       const newValue = data[field];
       const oldValue = existingBooking[field];
@@ -395,7 +394,7 @@ export async function PUT(req: Request) {
       if (field === "total" || field === "mco" || field === "payableAtPickup") {
         const numNewValue = newValue ? Number(newValue) : 0;
         const numOldValue = oldValue ? Number(oldValue) : 0;
-
+        
         if (numNewValue !== numOldValue) {
           changes.push({
             text: `${field} updated from ${numOldValue} to ${numNewValue}`
@@ -425,8 +424,6 @@ export async function PUT(req: Request) {
         updatedFields[field] = newValue;
       }
     });
-
-    console.log("changes =>", changes);
 
     // Prepare the update payload
     const updatePayload: any = {

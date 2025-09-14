@@ -575,7 +575,7 @@ function BookingRow({
                   Rental Details
                 </h4>
                 <div className="text-sm">
-                  <div className="text-gray-600">MCO: {booking.mco}</div>
+                  <div className="text-gray-600">MCO: ${booking.mco}</div>
                   <div className="text-gray-600">Payable at Pickup: ${booking.payableAtPickup.toFixed(2)}</div>
                 </div>
               </div>

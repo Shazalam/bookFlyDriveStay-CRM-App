@@ -79,7 +79,7 @@ export default function NewBookingPage() {
             const total = parseFloat(form.total) || 0;
             const payableAtPickup = parseFloat(form.payableAtPickup) || 0;
             const mco = total - payableAtPickup;
-            
+
             if (mco >= 0) {
                 setForm(prev => ({ ...prev, mco: mco.toFixed(2) }));
             }
@@ -94,7 +94,7 @@ export default function NewBookingPage() {
             const pickupDate = new Date(form.pickupDate);
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
-            
+
             setIsPastBooking(pickupDate < today);
         }
     }, [form.pickupDate]);
@@ -105,12 +105,12 @@ export default function NewBookingPage() {
             const res = await fetch(`/api/bookings/${bookingId}`, {
                 credentials: "include",
             });
-            
+
             if (!res.ok) throw new Error("Failed to fetch booking");
-            
+
             const data = await res.json();
             const booking = data.booking;
-            
+
             // Pre-fill form with existing booking data
             setForm({
                 fullName: booking.fullName || "",
@@ -150,21 +150,21 @@ export default function NewBookingPage() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setLoading(true);
-        
+
         console.log("isEditing id =>", id)
         console.log("isEditing =>", isEditing)
         const url = isEditing ? `/api/bookings/${id}` : "/api/bookings";
         const method = isEditing ? "PUT" : "POST";
-        
+
         // Prepare data for submission
         const submitData = {
             ...form,
             total: form.total ? parseFloat(form.total) : 0,
             mco: form.mco ? parseFloat(form.mco) : 0,
             payableAtPickup: form.payableAtPickup ? parseFloat(form.payableAtPickup) : 0,
-            status:"BOOKED"
+            status: "BOOKED"
         };
-        
+
         try {
             const res = await fetch(url, {
                 method,
@@ -219,7 +219,7 @@ export default function NewBookingPage() {
                                 </h3>
                                 <div className="mt-2 text-sm text-yellow-700">
                                     <p>
-                                        You are editing a booking with a past pickup date. 
+                                        You are editing a booking with a past pickup date.
                                         Some validations have been disabled to allow corrections.
                                     </p>
                                 </div>
@@ -241,7 +241,7 @@ export default function NewBookingPage() {
                                 name="fullName"
                                 value={form.fullName}
                                 onChange={handleChange}
-                                placeholder="John Doe"
+                                placeholder="Enter FullName"
                                 required
                             />
                             <InputField
@@ -250,7 +250,7 @@ export default function NewBookingPage() {
                                 type="email"
                                 value={form.email}
                                 onChange={handleChange}
-                                placeholder="john@example.com"
+                                placeholder="Enter Email"
                                 required
                             />
                             <InputField
@@ -258,12 +258,12 @@ export default function NewBookingPage() {
                                 name="phoneNumber"
                                 value={form.phoneNumber}
                                 onChange={handleChange}
-                                placeholder="+1 234 567 890"
+                                placeholder="Enter PhoneNumber"
                                 required
                             />
                         </div>
                     </section>
-                    
+
                     {/* Section: Booking Details */}
                     <section>
                         <h2 className="text-lg font-semibold text-indigo-700 mb-4 border-b pb-2">
@@ -276,33 +276,20 @@ export default function NewBookingPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Rental Company
                                 </label>
-                                {form.rentalCompany === "Other" ? (
-                                    <input
-                                        ref={otherInputRef}
-                                        type="text"
-                                        name="rentalCompany"
-                                        value={form.rentalCompany}
-                                        onChange={handleChange}
-                                        placeholder="Enter rental company name"
-                                        className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
-                                        required
-                                    />
-                                ) : (
-                                    <select
-                                        name="rentalCompany"
-                                        value={form.rentalCompany}
-                                        onChange={handleChange}
-                                        className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
-                                        required
-                                    >
-                                        <option value="">Select a company</option>
-                                        {rentalCompanies.map((company) => (
-                                            <option key={company} value={company}>
-                                                {company}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
+                                <select
+                                    name="rentalCompany"
+                                    value={form.rentalCompany}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                                    required
+                                >
+                                    <option value="">Select a company</option>
+                                    {rentalCompanies.map((company) => (
+                                        <option key={company} value={company}>
+                                            {company}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <InputField
@@ -310,7 +297,7 @@ export default function NewBookingPage() {
                                 name="confirmationNumber"
                                 value={form.confirmationNumber}
                                 onChange={handleChange}
-                                placeholder="e.g., ABC123456"
+                                placeholder="Enter Confirmation Number"
                                 required
                             />
                         </div>
@@ -330,7 +317,7 @@ export default function NewBookingPage() {
                                 name="pickupLocation"
                                 value={form.pickupLocation}
                                 onChange={handleChange}
-                                placeholder="e.g., JFK Airport"
+                                placeholder="Enter Pickup Location"
                                 required
                             />
 
@@ -358,7 +345,7 @@ export default function NewBookingPage() {
                                 name="dropoffLocation"
                                 value={form.dropoffLocation}
                                 onChange={handleChange}
-                                placeholder="e.g., LAX Airport"
+                                placeholder="Enter Dropoff Location"
                                 required
                             />
 
@@ -391,33 +378,33 @@ export default function NewBookingPage() {
                             <InputField
                                 label="Total ($)"
                                 name="total"
-                                type="number"
+                                type="text"
                                 value={form.total}
                                 onChange={handleChange}
-                                placeholder="500.00"
+                                placeholder="Enter Total"
                                 required
                                 step="0.01"
                                 min="0"
                             />
-                           
+
                             <InputField
                                 label="Payable at Pickup ($)"
                                 name="payableAtPickup"
-                                type="number"
+                                type="text"
                                 value={form.payableAtPickup}
                                 onChange={handleChange}
-                                placeholder="200.00"
+                                placeholder="Enter Payable At Pickup"
                                 step="0.01"
                                 min="0"
                             />
 
-                             <InputField
+                            <InputField
                                 label="MCO"
                                 name="mco"
-                                type="number"
+                                type="text"
                                 value={form.mco}
                                 onChange={handleChange}
-                                placeholder="300.00"
+                                placeholder="Enter MCO"
                                 readOnly
                                 step="0.01"
                             />
@@ -427,7 +414,7 @@ export default function NewBookingPage() {
                                 name="cardLast4"
                                 value={form.cardLast4}
                                 onChange={handleChange}
-                                placeholder="1234"
+                                placeholder="Enter Last 4 Digits"
                                 maxLength={4}
                                 required
                             />
@@ -447,7 +434,7 @@ export default function NewBookingPage() {
                                     name="billingAddress"
                                     value={form.billingAddress}
                                     onChange={handleChange}
-                                    placeholder="123 Main St, New York, NY"
+                                    placeholder="Enter Biling Address"
                                     rows={3}
                                     className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
                                     required
