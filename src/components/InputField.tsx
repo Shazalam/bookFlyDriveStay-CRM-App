@@ -15,6 +15,7 @@ interface InputFieldProps {
   step?: string;     // optional
   disabled?: boolean;
   readOnly?: boolean;
+  className?: string
 }
 
 export default function InputField({
@@ -30,6 +31,7 @@ export default function InputField({
   step,
   disabled = false,
   readOnly = false,     // ✅ added here
+  className = ""
 }: InputFieldProps) {
   return (
     <div>
@@ -53,7 +55,7 @@ export default function InputField({
         step={step}
         disabled={disabled}
         readOnly={readOnly}   // ✅ now works
-        className={`w-full border border-gray-300 rounded-lg p-3 text-gray-900 placeholder-gray-400 
+        className={className || `w-full border border-gray-300 rounded-lg p-3 text-gray-900 placeholder-gray-400 
           focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition 
           hover:border-indigo-400
           ${disabled || readOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"}

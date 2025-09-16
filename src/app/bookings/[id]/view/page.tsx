@@ -11,6 +11,7 @@ import Modal from "@/components/PreviewModal";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { fetchBookingById, resetOperationStatus } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
+import { bookingModificationTemplate } from "@/lib/email/templates/modification";
 
 export default function BookingDetailPage() {
     const { id } = useParams();
@@ -23,12 +24,71 @@ export default function BookingDetailPage() {
 
     // 2. Rename states for clarity
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [emailSubject, setEmailSubject] = useState("");
     const [emailPreviewHtml, setEmailPreviewHtml] = useState("");
     const [isSendingEmail, setIsSendingEmail] = useState(false); // State for loading indicator
     const dispatch = useAppDispatch();
     const { currentBooking: booking, loading, error } = useAppSelector((state) => state.booking);
 
+    const getEmailTemplate = (status: string, emailData: BookingTemplateData) => {
+        switch (status) {
+            case "MODIFIED":
+                return bookingModificationTemplate(emailData);
+            case "CANCELLED":
+                // You would implement a cancellation template here
+                return {
+                    subject: `${emailData.rentalCompany} Booking Cancellation #${emailData.confirmationNumber}`,
+                    html: `<div style="padding: 20px; text-align: center;">
+            <h2>Cancellation Email Template</h2>
+            <p>This would be the cancellation email content for ${emailData.fullName}</p>
+          </div>`
+                };
+            case "BOOKED":
+            default:
+                return bookingTemplate(emailData);
+        }
+    };
+
     // 3. Update the handleSend function to open the modal
+    // const handleSend = async (type: string) => {
+    //     if (!booking) return;
+
+    //     const emailData: BookingTemplateData = {
+    //         fullName: booking.fullName,
+    //         email: booking.email,
+    //         phoneNumber: booking.phoneNumber,
+    //         rentalCompany: booking.rentalCompany,
+    //         confirmationNumber: booking.confirmationNumber,
+    //         vehicleImage: booking.vehicleImage,
+    //         total: booking.total,
+    //         mco: booking.mco,
+    //         payableAtPickup: booking.payableAtPickup,
+    //         // 🐛 FIX HERE: Pass original strings directly to email template
+    //         pickupDate: booking.pickupDate, // Use the YYYY-MM-DD string
+    //         dropoffDate: booking.dropoffDate, // Use the YYYY-MM-DD string
+    //         pickupTime: booking.pickupTime, // Use the HH:MM AM/PM string
+    //         dropoffTime: booking.dropoffTime, // Use the HH:MM AM/PM string
+    //         pickupLocation: booking.pickupLocation,
+    //         dropoffLocation: booking.dropoffLocation,
+    //         cardLast4: booking.cardLast4,
+    //         expiration: booking.expiration,
+    //         billingAddress: booking.billingAddress,
+    //         salesAgent: booking.salesAgent
+    //     };
+
+    //     // For now, we only have one template. You can expand this with a switch statement for different email types.
+    //     switch (type) {
+    //         case "General":
+    //             setEmailPreviewHtml(bookingTemplate(emailData));
+    //             setIsModalOpen(true);
+    //             break;
+    //         // Add cases for "Voucher", "Payment Link", etc. as you create those templates
+    //         default:
+    //             toast.error(`Email template for "${type}" is not yet implemented.`);
+    //             break;
+    //     }
+    // };
+
     const handleSend = async (type: string) => {
         if (!booking) return;
 
@@ -42,11 +102,10 @@ export default function BookingDetailPage() {
             total: booking.total,
             mco: booking.mco,
             payableAtPickup: booking.payableAtPickup,
-            // 🐛 FIX HERE: Pass original strings directly to email template
-            pickupDate: booking.pickupDate, // Use the YYYY-MM-DD string
-            dropoffDate: booking.dropoffDate, // Use the YYYY-MM-DD string
-            pickupTime: booking.pickupTime, // Use the HH:MM AM/PM string
-            dropoffTime: booking.dropoffTime, // Use the HH:MM AM/PM string
+            pickupDate: booking.pickupDate,
+            dropoffDate: booking.dropoffDate,
+            pickupTime: booking.pickupTime,
+            dropoffTime: booking.dropoffTime,
             pickupLocation: booking.pickupLocation,
             dropoffLocation: booking.dropoffLocation,
             cardLast4: booking.cardLast4,
@@ -55,16 +114,29 @@ export default function BookingDetailPage() {
             salesAgent: booking.salesAgent
         };
 
-        // For now, we only have one template. You can expand this with a switch statement for different email types.
-        switch (type) {
-            case "General":
-                setEmailPreviewHtml(bookingTemplate(emailData));
-                setIsModalOpen(true);
-                break;
-            // Add cases for "Voucher", "Payment Link", etc. as you create those templates
-            default:
-                toast.error(`Email template for "${type}" is not yet implemented.`);
-                break;
+        try {
+            switch (type) {
+                case "General":
+                    const template = getEmailTemplate(booking.status, emailData);
+                    setEmailSubject(template.subject);
+                    setEmailPreviewHtml(template.html);
+                    setIsModalOpen(true);
+                    break;
+                case "Voucher":
+                    toast.error("Voucher template is not yet implemented.");
+                    break;
+                case "Payment Link":
+                    toast.error("Payment Link template is not yet implemented.");
+                    break;
+                case "Refund":
+                    toast.error("Refund template is not yet implemented.");
+                    break;
+                default:
+                    toast.error(`Email template for "${type}" is not yet implemented.`);
+            }
+        } catch (error) {
+            console.error("Error generating email template:", error);
+            toast.error("Failed to generate email template.");
         }
     };
 
@@ -86,7 +158,7 @@ export default function BookingDetailPage() {
                 },
                 body: JSON.stringify({
                     to: booking.email,
-                    subject: `${booking.rentalCompany} Car Rental Confirmation: #${booking.confirmationNumber}`,
+                    subject: emailSubject,
                     html: emailPreviewHtml,
                 }),
             });
@@ -436,7 +508,7 @@ export default function BookingDetailPage() {
                             )}
                             {activeTab === "timeline" && (
                                 <div>
-                                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Timeline</h2>
+                                    <h2 className="text-lg font-semibold text-gray-800 mb-4">History</h2>
 
                                     {booking.timeline && booking.timeline.length > 0 ? (
                                         <div className="space-y-6">
@@ -461,7 +533,7 @@ export default function BookingDetailPage() {
                                                             <div className="ml-4 flex-1">
                                                                 <div className="flex items-center justify-between">
                                                                     <p className="text-sm font-medium text-gray-900">
-                                                                        {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                        {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {event.agentName}
                                                                     </p>
                                                                 </div>
 
@@ -528,6 +600,7 @@ export default function BookingDetailPage() {
                             onSubmit={handleEmailSubmit}
                             isSubmitting={isSendingEmail}
                             title="Email Preview"
+                            status={booking.status}
                         >
                             <iframe
                                 srcDoc={emailPreviewHtml}

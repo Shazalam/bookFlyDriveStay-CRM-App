@@ -29,6 +29,7 @@ interface Booking {
   vehicleImage: string;
   total: string;
   mco: string;
+  modificationFee: { charge: string }[]; // Change to array
   payableAtPickup: string;
   pickupDate: string;
   dropoffDate: string;
@@ -76,6 +77,7 @@ const emptyForm: Booking = {
   vehicleImage: "",
   total: "",
   mco: "",
+  modificationFee: [], // Initialize as empty array
   payableAtPickup: "",
   pickupDate: "",
   dropoffDate: "",
@@ -98,6 +100,8 @@ export default function ModifyBookingPage() {
   const dispatch = useAppDispatch();
   const { currentBooking, loading, error, operation } = useAppSelector((state) => state.booking);
   const [isPastBooking, setIsPastBooking] = useState(false);
+  // Add state for new modification fee input
+  const [newModificationFee, setNewModificationFee] = useState("");
 
   // Initialize form with empty values
   const [form, setForm] = useState<Booking>(emptyForm);
@@ -129,19 +133,19 @@ export default function ModifyBookingPage() {
     }
   }, [id, dispatch]);
 
-    // Fetch logged-in agent
-    useEffect(() => {
-        async function fetchUser() {
-            const res = await fetch("/api/auth/me", { credentials: "include" });
-            const data = await res.json();
-            if (data.user) {
-                setForm((prev) => ({ ...prev, salesAgent: data.user.name }));
-            }
-        }
-        fetchUser();
-    }, []);
+  // Fetch logged-in agent
+  useEffect(() => {
+    async function fetchUser() {
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const data = await res.json();
+      if (data.user) {
+        setForm((prev) => ({ ...prev, salesAgent: data.user.name }));
+      }
+    }
+    fetchUser();
+  }, []);
 
-    
+
   // Update form when booking data is available
   useEffect(() => {
     if (currentBooking && id) {
@@ -155,6 +159,7 @@ export default function ModifyBookingPage() {
         vehicleImage: currentBooking.vehicleImage || "",
         total: currentBooking.total?.toString() || "",
         mco: currentBooking.mco?.toString() || "",
+        modificationFee: currentBooking.modificationFee || [], // Set modificationFee array
         payableAtPickup: currentBooking.payableAtPickup?.toString() || "",
         pickupDate: currentBooking.pickupDate || "",
         dropoffDate: currentBooking.dropoffDate || "",
@@ -174,6 +179,27 @@ export default function ModifyBookingPage() {
       setForm(emptyForm);
     }
   }, [currentBooking, id]);
+
+
+  // useEffect(() => {
+  //   if (newModificationFee) {
+  //     setForm(prev => ({
+  //       ...prev,
+  //       modificationFee: [...prev.modificationFee, { charge: newModificationFee }]
+  //     }));
+  //   }
+  // }, [newModificationFee])
+
+  // Handle adding a new modification fee
+  const addModificationFee = () => {
+    if (newModificationFee) {
+      setForm(prev => ({
+        ...prev,
+        modificationFee: [...prev.modificationFee, { charge: newModificationFee }]
+      }));
+      // setNewModificationFee("");
+    }
+  };
 
   // Calculate MCO when total or payableAtPickup changes
   useEffect(() => {
@@ -240,10 +266,11 @@ export default function ModifyBookingPage() {
     // Always send full form data
     const formData: Partial<Booking> = { ...form };
 
-    dispatch(saveBooking({
+    await dispatch(saveBooking({
       formData,
       id: id || undefined, // If id exists, it's an update; otherwise, it's a create
     }));
+    setNewModificationFee("");
   };
 
 
@@ -357,6 +384,7 @@ export default function ModifyBookingPage() {
                 name="fullName"
                 value={form.fullName}
                 onChange={handleChange}
+                required
                 placeholder="Enter FullName"
                 readOnly={!editable.fullName}
               />
@@ -366,6 +394,7 @@ export default function ModifyBookingPage() {
                 type="email"
                 value={form.email}
                 onChange={handleChange}
+                required
                 placeholder="Enter Email"
                 readOnly={!editable.email}
               />
@@ -374,6 +403,7 @@ export default function ModifyBookingPage() {
                 name="phoneNumber"
                 value={form.phoneNumber}
                 onChange={handleChange}
+                required
                 placeholder="Enter PhoneNumber"
                 readOnly={!editable.phoneNumber}
               />
@@ -383,6 +413,7 @@ export default function ModifyBookingPage() {
                 type="date"
                 value={form.dateOfBirth || ""}
                 onChange={handleChange}
+                required
               />
             </div>
           </section>
@@ -417,11 +448,11 @@ export default function ModifyBookingPage() {
               </div>
 
               <InputField
-                label="Confirmation Number"
+                label="Confirmation Number/Rental Agreement"
                 name="confirmationNumber"
                 value={form.confirmationNumber}
                 onChange={handleChange}
-                placeholder="Enter Confirmation Number"
+                placeholder="Enter Confirmation Number/Rental Agreement"
                 required
                 readOnly={!editable.confirmationNumber}
               />
@@ -445,6 +476,7 @@ export default function ModifyBookingPage() {
                 name="pickupLocation"
                 value={form.pickupLocation}
                 onChange={handleChange}
+                required
                 placeholder="e.g., JFK Airport"
                 readOnly={!editable.pickupLocation}
               />
@@ -454,6 +486,7 @@ export default function ModifyBookingPage() {
                 type="date"
                 value={form.pickupDate}
                 onChange={handleChange}
+                required
                 min={isPastBooking ? undefined : new Date().toISOString().split('T')[0]}
                 readOnly={!editable.pickupDate}
               />
@@ -463,6 +496,7 @@ export default function ModifyBookingPage() {
                 name="pickupTime"
                 value={form.pickupTime}
                 onChange={handleChange}
+                required
                 disabled={!editable.pickupTime}
               />
               <InputField
@@ -470,6 +504,7 @@ export default function ModifyBookingPage() {
                 name="dropoffLocation"
                 value={form.dropoffLocation}
                 onChange={handleChange}
+                required
                 placeholder="e.g., LAX Airport"
                 readOnly={!editable.dropoffLocation}
               />
@@ -479,6 +514,7 @@ export default function ModifyBookingPage() {
                 type="date"
                 value={form.dropoffDate}
                 onChange={handleChange}
+                required
                 min={isPastBooking ? undefined : new Date().toISOString().split('T')[0]}
                 readOnly={!editable.dropoffDate}
               />
@@ -487,6 +523,7 @@ export default function ModifyBookingPage() {
                 name="dropoffTime"
                 value={form.dropoffTime}
                 onChange={handleChange}
+                required
                 disabled={!editable.dropoffTime}
               />
             </div>
@@ -498,31 +535,143 @@ export default function ModifyBookingPage() {
               💳 Payment Information
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              <InputField
-                label="Total ($)"
-                name="total"
-                value={form.total}
-                onChange={handleChange}
-                placeholder="Enter Total"
-                readOnly={!editable.total}
-              />
+              {/* {
+                id && (
+                  <>
+                    <InputField
+                      label="Total ($)"
+                      name="total"
+                      value={form.total}
+                      onChange={handleChange}
+                      placeholder="Enter Total"
+                      readOnly={!editable.total}
+                    />
 
-              <InputField
-                label="Payable at Pickup ($)"
-                name="payableAtPickup"
-                value={form.payableAtPickup}
-                onChange={handleChange}
-                placeholder="Enter Payable At Pickup"
-                readOnly={!editable.payableAtPickup}
-              />
-              <InputField
-                label="MCO"
-                name="mco"
-                value={form.mco}
-                onChange={handleChange}
-                placeholder="MCO Reference"
-                readOnly={!editable.mco}
-              />
+                    <InputField
+                      label="Payable at Pickup ($)"
+                      name="payableAtPickup"
+                      value={form.payableAtPickup}
+                      onChange={handleChange}
+                      placeholder="Enter Payable At Pickup"
+                      readOnly={!editable.payableAtPickup}
+                    />
+                    <InputField
+                      label="MCO"
+                      name="mco"
+                      value={form.mco}
+                      onChange={handleChange}
+                      placeholder="MCO Reference"
+                      readOnly={!editable.mco}
+                    />
+                  </>
+                )
+              } */}
+
+              {/* Add new modification fee */}
+              {/* <div className="flex items-center gap-2 mt-2">
+                <InputField
+                  label="Modification Fee"
+                  name="fee"
+                  value={newModificationFee}
+                  onChange={(e) => setNewModificationFee(e.target.value)}
+                  placeholder="Enter Modification fee"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={addModificationFee}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  Add
+                </button>
+              </div> */}
+
+              {id && (
+                <>
+                  <InputField
+                    label="Total ($)"
+                    name="total"
+                    value={form.total}
+                    onChange={handleChange}
+                    placeholder="Enter Total"
+                    readOnly={!editable.total}
+                  />
+
+                  <InputField
+                    label="Payable at Pickup ($)"
+                    name="payableAtPickup"
+                    value={form.payableAtPickup}
+                    onChange={handleChange}
+                    placeholder="Enter Payable At Pickup"
+                    readOnly={!editable.payableAtPickup}
+                  />
+                  <InputField
+                    label="MCO"
+                    name="mco"
+                    value={form.mco}
+                    onChange={handleChange}
+                    placeholder="MCO Reference"
+                    readOnly={!editable.mco}
+                  />
+                </>
+              )}
+
+              {/* Improved Modification Fee Section */}
+              <div className="md:col-span-2">
+                <div className="flex flex-col gap-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Modification Fee
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newModificationFee}
+                      onChange={(e) => setNewModificationFee(e.target.value)}
+                      placeholder="Enter fee amount (e.g., 25.00)"
+                      className="flex-1 border border-gray-300 rounded-lg p-3 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={addModificationFee}
+                      disabled={!newModificationFee.trim()}
+                      className="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                      Add Fee
+                    </button>
+                  </div>
+                </div>
+
+                {/* Display added fees */}
+                {/* Display only the current fee instead of all fees */}
+                {form.modificationFee.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Current Modification Fee:</p>
+                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+                      <span className="text-gray-700 font-medium">
+                        ${form.modificationFee[form.modificationFee.length - 1].charge}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Remove the last fee
+                          const updatedFees = [...form.modificationFee];
+                          updatedFees.pop();
+                          setForm(prev => ({ ...prev, modificationFee: updatedFees }));
+                        }}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <InputField
                 label="Card Last 4 Digits"
                 name="cardLast4"
@@ -581,7 +730,7 @@ export default function ModifyBookingPage() {
             <LoadingButton
               type="submit"
               loading={loading}
-              className="w-full bg-indigo-600 text-white hover:bg-indigo-700 py-3 text-lg rounded-lg"
+              className="w-full bg-indigo-600 text-white hover:bg-indigo-700 py-3 text-lg rounded-lg cursor-pointer"
             >
               {id ? "Save Changes" : "Create Booking"}
             </LoadingButton>

@@ -44,6 +44,7 @@ export default function NewBookingPage() {
         expiration: "",
         billingAddress: "",
         salesAgent: "",
+        status: "BOOKED"
     });
 
     const otherInputRef = useRef<HTMLInputElement | null>(null);
@@ -133,6 +134,7 @@ export default function NewBookingPage() {
                 expiration: booking.expiration || "",
                 billingAddress: booking.billingAddress || "",
                 salesAgent: booking.salesAgent || "",
+                status:booking?.status ||  "BOOKED"
             });
         } catch (error) {
             console.error("Error fetching booking:", error);
@@ -162,8 +164,7 @@ export default function NewBookingPage() {
             ...form,
             total: form.total ? parseFloat(form.total) : 0,
             mco: form.mco ? parseFloat(form.mco) : 0,
-            payableAtPickup: form.payableAtPickup ? parseFloat(form.payableAtPickup) : 0,
-            status: "BOOKED"
+            payableAtPickup: form.payableAtPickup ? parseFloat(form.payableAtPickup) : 0
         };
 
         try {
@@ -466,7 +467,7 @@ export default function NewBookingPage() {
                         <LoadingButton
                             type="submit"
                             loading={loading}
-                            className="w-full bg-indigo-600 text-white hover:bg-indigo-700 py-3 text-lg rounded-lg"
+                            className="w-full bg-indigo-600 text-white hover:bg-indigo-700 py-3 text-lg rounded-lg cursor-pointer"
                         >
                             {isEditing ? "Update Booking" : "Create Booking"}
                         </LoadingButton>

@@ -14,6 +14,7 @@ interface TimelineChange {
 interface TimelineEntry {
   date: string;
   message: string;
+  agentName: string;
   changes: TimelineChange[];
 }
 
@@ -74,14 +75,27 @@ export async function PUT(req: Request) {
     const changes: TimelineChange[] = [];
     const updatedFields: BookingUpdateFields = {};
 
+    // Handle modification fees if they are provided
+    if (data.modificationFee && Array.isArray(data.modificationFee)) {
+      updatedFields.modificationFee = data.modificationFee;
+      console.log("modification Fee =>", updatedFields.modificationFee)
+      // Get the last modification fee
+      const lastFee = data.modificationFee[data.modificationFee.length - 1];
+      // Add to timeline if modification fees changed
+      if (JSON.stringify(existingBooking.modificationFee) !== JSON.stringify(data.modificationFee)) {
+        changes.push({
+          text: `Modification fee added: $${lastFee.charge}`,
+        });
+      }
+    }
     // List of fields to check for changes
     const fieldsToCheck = [
       "fullName", "email", "phoneNumber", "rentalCompany", "confirmationNumber",
       "vehicleImage", "total", "mco", "payableAtPickup", "pickupDate", "dropoffDate",
       "pickupTime", "dropoffTime", "pickupLocation", "dropoffLocation", "cardLast4",
-      "expiration", "billingAddress", "status"
+      "expiration", "billingAddress", "status", "dateOfBirth"
     ];
-     
+
     fieldsToCheck.forEach(field => {
       const newValue = data[field];
       const oldValue = existingBooking[field];
@@ -90,7 +104,7 @@ export async function PUT(req: Request) {
       if (field === "total" || field === "mco" || field === "payableAtPickup") {
         const numNewValue = newValue ? Number(newValue) : 0;
         const numOldValue = oldValue ? Number(oldValue) : 0;
-        
+
         if (numNewValue !== numOldValue) {
           changes.push({
             text: `${field} updated from ${numOldValue} to ${numNewValue}`
@@ -131,19 +145,16 @@ export async function PUT(req: Request) {
       // Create the timeline entry with proper structure
       const timelineEntry: TimelineEntry = {
         date: new Date().toISOString(),
-        message: data?.status === "BOOKED" ? `New Booking Created - Updated ${changes.length} field(s)` : `Updated ${changes.length} field(s)`,
+        message: `Updated ${changes.length} field(s)`,
+        agentName: data?.salesAgent || "",
         changes: changes
       };
 
-      if (data?.status === "BOOKED") {
-        updatePayload.timeline = timelineEntry;
-      }
-      else {
-        // Use $push to add the timeline entry
-        updatePayload.$push = {
-          timeline: timelineEntry
-        };
-      }
+      // Use $push to add the timeline entry
+      updatePayload.$push = {
+        timeline: timelineEntry
+      };
+
     }
 
     // ✅ Update booking

@@ -22,12 +22,14 @@ export interface Booking {
   expiration: string;
   billingAddress: string;
   salesAgent: string;
-  dateOfBirth:string;
+  dateOfBirth: string;
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
   createdAt: string;
+  modificationFee: { charge: string }[]; // Change to array
   timeline?: {
     date: string;
     message: string;
+    agentName: string;
     changes: { text: string }[];
   }[];
 }
@@ -57,10 +59,10 @@ export const saveBooking = createAsyncThunk<
     const url = id ? `/api/bookings/${id}` : "/api/bookings";
 
     // For updates, remove _id from the data
-    const dataToSend = id ? 
-      Object.fromEntries(Object.entries(formData).filter(([key]) => key !== '_id')) : 
+    const dataToSend = id ?
+      Object.fromEntries(Object.entries(formData).filter(([key]) => key !== '_id')) :
       formData;
-      
+
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -88,11 +90,11 @@ export const fetchBookingById = createAsyncThunk<
 >("booking/fetchById", async (id, { rejectWithValue }) => {
   try {
     const res = await fetch(`/api/bookings/${id}`, { credentials: "include" });
-    
+
     if (!res.ok) {
       throw new Error("Failed to load booking");
     }
-    
+
     const data = await res.json();
     return data.booking as Booking;
   } catch (err) {
