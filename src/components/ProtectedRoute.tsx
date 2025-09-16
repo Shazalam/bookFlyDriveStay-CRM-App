@@ -20,37 +20,37 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     email: "john.doe@example.com",
   };
 
-  const handleLogout = useCallback(async () => {
-    // logout logic
-    toast.success("Logged out successfully");
-    setAuthorized(false);
-    router.push("/login");
-     if (authorized) return;
-      setAuthorized(true);
-  
-      const toastId = toast.loading("Signing out...");
-  
-      try {
-        await logout();
-  
-        toast.success("Signed out successfully ✅", { id: toastId });
-  
-        // 🔹 Redirect to login after a short delay for smooth UX
-        setTimeout(() => {
-          router.push("/login");
-        }, 600);
-      } catch (err) {
-        console.error("Logout failed:", err);
-        toast.error("Logout failed. Please try again ❌", { id: toastId });
-      } finally {
-        setAuthorized(false);
-      }
-  }, [router,authorized]);
+const handleLogout = useCallback(async () => {
+  console.log("handleLogout");
+  setLoading(true);
+
+  const toastId = toast.loading("Signing out...");
+
+  try {
+    await logout(); // <-- your API call to clear session
+
+    setAuthorized(false); // reset auth state immediately
+
+    toast.success("Signed out successfully ✅", { id: toastId });
+
+    setTimeout(() => {
+      router.push("/login");
+    }, 600);
+  } catch (err) {
+    console.error("Logout failed:", err);
+    toast.error("Logout failed. Please try again ❌", { id: toastId });
+    // stay on same route if logout fails
+  } finally {
+    setLoading(false);
+  }
+}, [router]);
+
 
   useEffect(() => {
     async function checkAuth() {
       try {
         const res = await fetch("/api/auth/me", { credentials: "include" });
+
         if (res.ok) {
           setAuthorized(true);
           // ✅ If logged in and trying to access login/register → redirect

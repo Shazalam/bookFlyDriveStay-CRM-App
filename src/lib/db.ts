@@ -5,7 +5,6 @@ if (!MONGODB_URI) throw new Error("⚠️ Please define MONGODB_URI");
 
 // ✅ Extend global type to store cached connection
 declare global {
-  // eslint-disable-next-line no-var
   var mongooseCache: {
     conn: Mongoose | null;
     promise: Promise<Mongoose> | null;

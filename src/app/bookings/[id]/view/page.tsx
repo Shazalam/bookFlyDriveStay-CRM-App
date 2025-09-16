@@ -7,50 +7,88 @@ import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
 import { bookingTemplate, BookingTemplateData } from "@/lib/email/templates/booking";
-import Modal from "@/components/Modal";
-
-interface Booking {
-    _id: string;
-    fullName: string;
-    email: string;
-    phoneNumber: string;
-    rentalCompany: string;
-    confirmationNumber: string;
-    vehicleImage: string;
-    total: number;
-    mco: number;
-    payableAtPickup: number;
-    pickupDate: string;
-    dropoffDate: string;
-    pickupTime: string;
-    dropoffTime: string;
-    pickupLocation: string;
-    dropoffLocation: string;
-    cardLast4: string;
-    expiration: string;
-    billingAddress: string;
-    salesAgent: string;
-    status: "BOOKED" | "MODIFIED" | "CANCELLED";
-    createdAt: string;
-    history?: { date: string; message: string }[];
-}
+import Modal from "@/components/PreviewModal";
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
+import { fetchBookingById, resetOperationStatus } from "@/app/store/slices/bookingSlice";
+import ErrorComponent from "@/components/ErrorComponent";
+import { bookingModificationTemplate } from "@/lib/email/templates/modification";
 
 export default function BookingDetailPage() {
     const { id } = useParams();
-    const [booking, setBooking] = useState<Booking | null>(null);
-    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("details");
     const [expandedSections, setExpandedSections] = useState({
         description: true,
         contact: true,
         company: true
     });
+
     // 2. Rename states for clarity
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [emailSubject, setEmailSubject] = useState("");
     const [emailPreviewHtml, setEmailPreviewHtml] = useState("");
     const [isSendingEmail, setIsSendingEmail] = useState(false); // State for loading indicator
+    const dispatch = useAppDispatch();
+    const { currentBooking: booking, loading, error } = useAppSelector((state) => state.booking);
+
+    const getEmailTemplate = (status: string, emailData: BookingTemplateData) => {
+        switch (status) {
+            case "MODIFIED":
+                return bookingModificationTemplate(emailData);
+            case "CANCELLED":
+                // You would implement a cancellation template here
+                return {
+                    subject: `${emailData.rentalCompany} Booking Cancellation #${emailData.confirmationNumber}`,
+                    html: `<div style="padding: 20px; text-align: center;">
+            <h2>Cancellation Email Template</h2>
+            <p>This would be the cancellation email content for ${emailData.fullName}</p>
+          </div>`
+                };
+            case "BOOKED":
+            default:
+                return bookingTemplate(emailData);
+        }
+    };
 
     // 3. Update the handleSend function to open the modal
+    // const handleSend = async (type: string) => {
+    //     if (!booking) return;
+
+    //     const emailData: BookingTemplateData = {
+    //         fullName: booking.fullName,
+    //         email: booking.email,
+    //         phoneNumber: booking.phoneNumber,
+    //         rentalCompany: booking.rentalCompany,
+    //         confirmationNumber: booking.confirmationNumber,
+    //         vehicleImage: booking.vehicleImage,
+    //         total: booking.total,
+    //         mco: booking.mco,
+    //         payableAtPickup: booking.payableAtPickup,
+    //         // 🐛 FIX HERE: Pass original strings directly to email template
+    //         pickupDate: booking.pickupDate, // Use the YYYY-MM-DD string
+    //         dropoffDate: booking.dropoffDate, // Use the YYYY-MM-DD string
+    //         pickupTime: booking.pickupTime, // Use the HH:MM AM/PM string
+    //         dropoffTime: booking.dropoffTime, // Use the HH:MM AM/PM string
+    //         pickupLocation: booking.pickupLocation,
+    //         dropoffLocation: booking.dropoffLocation,
+    //         cardLast4: booking.cardLast4,
+    //         expiration: booking.expiration,
+    //         billingAddress: booking.billingAddress,
+    //         salesAgent: booking.salesAgent
+    //     };
+
+    //     // For now, we only have one template. You can expand this with a switch statement for different email types.
+    //     switch (type) {
+    //         case "General":
+    //             setEmailPreviewHtml(bookingTemplate(emailData));
+    //             setIsModalOpen(true);
+    //             break;
+    //         // Add cases for "Voucher", "Payment Link", etc. as you create those templates
+    //         default:
+    //             toast.error(`Email template for "${type}" is not yet implemented.`);
+    //             break;
+    //     }
+    // };
+
     const handleSend = async (type: string) => {
         if (!booking) return;
 
@@ -64,11 +102,10 @@ export default function BookingDetailPage() {
             total: booking.total,
             mco: booking.mco,
             payableAtPickup: booking.payableAtPickup,
-            // 🐛 FIX HERE: Pass original strings directly to email template
-            pickupDate: booking.pickupDate, // Use the YYYY-MM-DD string
-            dropoffDate: booking.dropoffDate, // Use the YYYY-MM-DD string
-            pickupTime: booking.pickupTime, // Use the HH:MM AM/PM string
-            dropoffTime: booking.dropoffTime, // Use the HH:MM AM/PM string
+            pickupDate: booking.pickupDate,
+            dropoffDate: booking.dropoffDate,
+            pickupTime: booking.pickupTime,
+            dropoffTime: booking.dropoffTime,
             pickupLocation: booking.pickupLocation,
             dropoffLocation: booking.dropoffLocation,
             cardLast4: booking.cardLast4,
@@ -77,16 +114,29 @@ export default function BookingDetailPage() {
             salesAgent: booking.salesAgent
         };
 
-        // For now, we only have one template. You can expand this with a switch statement for different email types.
-        switch (type) {
-            case "General":
-                setEmailPreviewHtml(bookingTemplate(emailData));
-                setIsModalOpen(true);
-                break;
-            // Add cases for "Voucher", "Payment Link", etc. as you create those templates
-            default:
-                toast.error(`Email template for "${type}" is not yet implemented.`);
-                break;
+        try {
+            switch (type) {
+                case "General":
+                    const template = getEmailTemplate(booking.status, emailData);
+                    setEmailSubject(template.subject);
+                    setEmailPreviewHtml(template.html);
+                    setIsModalOpen(true);
+                    break;
+                case "Voucher":
+                    toast.error("Voucher template is not yet implemented.");
+                    break;
+                case "Payment Link":
+                    toast.error("Payment Link template is not yet implemented.");
+                    break;
+                case "Refund":
+                    toast.error("Refund template is not yet implemented.");
+                    break;
+                default:
+                    toast.error(`Email template for "${type}" is not yet implemented.`);
+            }
+        } catch (error) {
+            console.error("Error generating email template:", error);
+            toast.error("Failed to generate email template.");
         }
     };
 
@@ -108,7 +158,7 @@ export default function BookingDetailPage() {
                 },
                 body: JSON.stringify({
                     to: booking.email,
-                    subject: `${booking.rentalCompany} Car Rental Confirmation: #${booking.confirmationNumber}`,
+                    subject: emailSubject,
                     html: emailPreviewHtml,
                 }),
             });
@@ -132,23 +182,12 @@ export default function BookingDetailPage() {
     };
 
     useEffect(() => {
-        async function fetchBooking() {
-            try {
-                setLoading(true);
-                const res = await fetch(`/api/bookings/${id}`, { credentials: "include" });
-                if (!res.ok) throw new Error("Failed to load booking");
-                const data = await res.json();
-                setBooking(data.booking);
-            } catch (err: unknown) {
-                console.error("Error fetching booking:", err);
-                const message = err instanceof Error ? err.message : "Error loading booking";
-                toast.error(message);
-            } finally {
-                setLoading(false);
-            }
+        if (id) {
+            dispatch(fetchBookingById(id as string))
+                .unwrap()
+                .catch((err) => toast.error(err));
         }
-        fetchBooking();
-    }, [id]);
+    }, [id, dispatch]);
 
     const toggleSection = (section: string) => {
         setExpandedSections(prev => ({
@@ -170,9 +209,17 @@ export default function BookingDetailPage() {
         }).replace(/(am|pm)/i, match => match.toUpperCase());
     };
 
-    if (loading) return (
-        <LoadingScreen />
-    );
+    if (error) {
+        return (
+            <ErrorComponent
+                title="Failed to Fetch the data"
+                message={error || "Unknown error occurred"}
+                onRetry={() => dispatch(resetOperationStatus())}
+            />
+        )
+    }
+
+    if (loading) return <LoadingScreen />;
 
     if (!booking) return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -195,7 +242,7 @@ export default function BookingDetailPage() {
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between">
                             <div className="mb-4 md:mb-0">
                                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{booking.rentalCompany} ({booking.confirmationNumber})</h1>
-                                <p className="text-blue-600 font-semibold text-xl mt-1">${booking.mco.toFixed(2)} (Total - ${booking.total.toFixed(2)})</p>
+                                <p className="text-blue-600 font-semibold text-xl mt-1">${Number(booking.mco).toFixed(2)} (Total - ${Number(booking.total).toFixed(2)})</p>
                                 <div className="flex flex-wrap items-center mt-2 gap-2">
                                     <span className="text-sm text-gray-500">Created on: {new Date(booking.createdAt).toLocaleDateString()}</span>
                                 </div>
@@ -332,9 +379,9 @@ export default function BookingDetailPage() {
                                             <br />
                                             ➤ Drop-off: {booking.dropoffLocation} on {new Date(booking.dropoffDate).toLocaleDateString()}
                                             <br />
-                                            ➤ Total amount: ${booking.total.toFixed(2)}
+                                            ➤ Total amount: ${Number(booking.total).toFixed(2)}
                                             <br />
-                                            ➤ Payable at pickup: ${booking.payableAtPickup.toFixed(2)}
+                                            ➤ Payable at pickup: ${Number(booking.payableAtPickup).toFixed(2)}
                                         </p>
                                         <div className="mt-4 text-sm text-gray-500 flex items-center">
                                             <FiClock className="mr-2" />
@@ -436,8 +483,8 @@ export default function BookingDetailPage() {
                                             </h3>
 
                                             <div>
-                                                <p className="text-gray-600"><strong>Total Amount:</strong> ${booking.total.toFixed(2)}</p>
-                                                <p className="text-gray-600"><strong>Payable at Pickup:</strong> ${booking.payableAtPickup.toFixed(2)}</p>
+                                                <p className="text-gray-600"><strong>Total Amount:</strong> ${Number(booking.total).toFixed(2)}</p>
+                                                <p className="text-gray-600"><strong>Payable at Pickup:</strong> ${Number(booking.payableAtPickup).toFixed(2)}</p>
                                                 <p className="text-gray-600"><strong>MCO:</strong> ${booking.mco}</p>
                                             </div>
 
@@ -459,45 +506,62 @@ export default function BookingDetailPage() {
                                     </div>
                                 </div>
                             )}
-
-
-
-
                             {activeTab === "timeline" && (
                                 <div>
                                     <h2 className="text-lg font-semibold text-gray-800 mb-4">History</h2>
 
-                                    <div className="mb-6">
-                                        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">YESTERDAY</h3>
+                                    {booking.timeline && booking.timeline.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {booking.timeline.map((event, index) => {
+                                                const eventDate = new Date(event.date);
+                                                const isLast = index === (booking.timeline?.length ?? 0) - 1;
+                                                console.log("timeline =>", booking)
+                                                return (
+                                                    <div key={index} className="relative">
+                                                        {/* Timeline connector */}
+                                                        {!isLast && (
+                                                            <div className="absolute left-4 top-8 h-8 w-0.5 bg-blue-200"></div>
+                                                        )}
 
-                                        <div className="space-y-4 pl-4 border-l-2 border-blue-200">
-                                            {booking.history?.length ? (
-                                                booking.history.map((h, idx) => (
-                                                    <div key={idx} className="relative">
-                                                        <div className="absolute -left-4 top-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                                            <FiCheckCircle className="text-blue-600" />
+                                                        <div className="flex items-start">
+                                                            <div className="flex-shrink-0">
+                                                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                                    <FiCheckCircle className="text-blue-600 w-4 h-4" />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="ml-4 flex-1">
+                                                                <div className="flex items-center justify-between">
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {event.agentName}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="mt-1 bg-blue-50 p-3 rounded-lg">
+                                                                    <p className="text-sm font-medium text-blue-800 mb-2">
+                                                                        {event.message}
+                                                                    </p>
+                                                                    {event.changes && event.changes.length > 0 && (
+                                                                        <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                                                                            {event.changes.map((change, changeIndex) => (
+                                                                                <li key={changeIndex}>{change.text}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="ml-6 p-4 bg-blue-50 rounded-lg">
-                                                            <p className="text-sm font-medium text-gray-900">{new Date(h.date).toLocaleTimeString()}</p>
-                                                            <p className="text-sm text-gray-600">Stage updated by system</p>
-                                                            <p className="text-sm text-blue-800 font-medium mt-1">{h.message}</p>
-                                                        </div>
                                                     </div>
-                                                ))
-                                            ) : (
-                                                <div className="relative">
-                                                    <div className="absolute -left-4 top-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                                        <FiCheckCircle className="text-blue-600" />
-                                                    </div>
-                                                    <div className="ml-6 p-4 bg-blue-50 rounded-lg">
-                                                        <p className="text-sm font-medium text-gray-900">11:58 PM</p>
-                                                        <p className="text-sm text-gray-600">Stage updated by system</p>
-                                                        <p className="text-sm text-blue-800 font-medium mt-1">Booking created</p>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                );
+                                            })}
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                            <FiClock className="mx-auto h-12 w-12 text-gray-400" />
+                                            <h3 className="mt-2 text-sm font-medium text-gray-900">No timeline events</h3>
+                                            <p className="mt-1 text-sm text-gray-500">Activity will appear here as changes are made to this booking.</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -536,6 +600,7 @@ export default function BookingDetailPage() {
                             onSubmit={handleEmailSubmit}
                             isSubmitting={isSendingEmail}
                             title="Email Preview"
+                            status={booking.status}
                         >
                             <iframe
                                 srcDoc={emailPreviewHtml}

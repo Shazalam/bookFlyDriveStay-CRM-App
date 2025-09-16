@@ -4,10 +4,10 @@ export interface BookingTemplateData {
   phoneNumber?: string;
   rentalCompany?: string;
   vehicleImage?: string;
-  vehicleType?: string; // Added this property based on its usage in the template
-  total?: number;
-  mco?: number;
-  payableAtPickup?: number;
+  vehicleType?: string;
+  total?: string;
+  mco?: string;
+  payableAtPickup?: string;
   pickupDate?: string;
   dropoffDate?: string;
   pickupTime?: string;
@@ -22,7 +22,8 @@ export interface BookingTemplateData {
   confirmationNumber?: string;
 }
 
-export const bookingTemplate = (data: BookingTemplateData) => `
+export const bookingTemplate = (data: BookingTemplateData) => {
+  const html = `
   <div style="margin:0;padding:0;background:#f5f7fb;">
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f5f7fb;">
       <tr>
@@ -43,7 +44,7 @@ export const bookingTemplate = (data: BookingTemplateData) => `
                 <p style="margin:0 0 14px;font-size:14px;line-height:1.6;">
                   Greetings of the day! Please review the <strong>car rental itinerary</strong> and
                   <strong>payment breakdown</strong> below. If everything looks correct, kindly
-                  <strong>reply to this email with “I acknowledge”</strong> and provide your
+                  <strong>reply to this email with "I acknowledge"</strong> and provide your
                   <strong>driving license number</strong> to proceed.
                 </p>
 
@@ -180,4 +181,9 @@ export const bookingTemplate = (data: BookingTemplateData) => `
       </tr>
     </table>
   </div>
-`;
+  `;
+
+  const subject = `${data.rentalCompany || "Car Rental"} - Booking Confirmation #${data.confirmationNumber || ""}`;
+  
+  return { subject, html };
+};

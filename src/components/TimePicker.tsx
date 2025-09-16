@@ -6,6 +6,7 @@ interface TimePickerProps {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     required?: boolean;
+    disabled?: boolean
 }
 
 export default function TimePicker({
@@ -14,6 +15,7 @@ export default function TimePicker({
     value,
     onChange,
     required,
+    disabled = false,
 }: TimePickerProps) {
     // generate time slots with 15 min gap + AM/PM
     const generateTimeSlots = () => {
@@ -45,6 +47,7 @@ export default function TimePicker({
                 value={value}
                 onChange={onChange}
                 required={required}
+                disabled={disabled} // ✅ pass it here
                 className="border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
             >
                 <option value="">Select Time</option>

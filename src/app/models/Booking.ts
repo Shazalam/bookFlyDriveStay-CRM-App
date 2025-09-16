@@ -7,9 +7,9 @@ export interface IBooking extends Document {
   rentalCompany: string;
   confirmationNumber: string;
   vehicleImage: string;
-  total: number;
-  mco: number;
-  payableAtPickup: number;
+  total: string;
+  mco: string;
+  payableAtPickup: string;
   pickupDate: string;
   dropoffDate: string;
   pickupTime: string;
@@ -19,9 +19,29 @@ export interface IBooking extends Document {
   cardLast4: string;
   expiration: string;
   billingAddress: string;
+  dateOfBirth: string;
   salesAgent: string;
   agentId: Types.ObjectId;  // 🔑 reference
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
+  modificationFee: {
+    charge: string;
+  }[];
+  // Add timeline field
+  timeline: {
+    date: string;
+    message: string;
+    agentName: string,
+    changes: {
+      text: string;
+    }[];
+  }[];
+
+  // Add notes field
+  notes: {
+    text: string;
+    createdAt: Date;
+    createdBy: Types.ObjectId;
+  }[];
 }
 
 const BookingSchema = new Schema<IBooking>(
@@ -32,9 +52,9 @@ const BookingSchema = new Schema<IBooking>(
     rentalCompany: { type: String, required: true },
     vehicleImage: { type: String, default: "" }, // ✅ ensure it always saves
     confirmationNumber: { type: String, required: true },
-    total: { type: Number },
-    mco: { type: Number, required: true },
-    payableAtPickup: { type: Number },
+    total: { type: String, default: "0.00" },
+    mco: { type: String, required: true },
+    payableAtPickup: { type: String, default: "0.00" },
     pickupDate: { type: String },
     dropoffDate: { type: String },
     pickupTime: { type: String },
@@ -44,9 +64,53 @@ const BookingSchema = new Schema<IBooking>(
     cardLast4: { type: String, required: true },
     expiration: { type: String, required: true },
     billingAddress: { type: String, required: true },
+    dateOfBirth: { type: String, default: "" },
     salesAgent: { type: String, required: true },
     agentId: { type: Schema.Types.ObjectId, ref: "Agent", required: true }, // 🔑 reference
     status: { type: String, enum: ["BOOKED", "MODIFIED", "CANCELLED"], default: "BOOKED" },
+    modificationFee: {
+      type: [
+        { charge: { type: String } }
+      ],
+      default: []
+    },
+    // Updated timeline field
+    timeline: {
+      type: [
+        {
+          date: { type: String, required: true },
+          agentName: { type: String, required: true },
+          message: { type: String, required: true },
+          changes: [
+            {
+              text: { type: String, required: true }
+            }
+          ]
+        }
+      ],
+      required: true,
+      default: []
+    },
+    // Add notes field (optional)
+    notes: {
+      type: [
+        {
+          text: {
+            type: String,
+            required: true
+          },
+          createdAt: {
+            type: Date,
+            default: Date.now
+          },
+          createdBy: {
+            type: Schema.Types.ObjectId,
+            ref: "Agent"
+          }
+        }
+      ],
+      default: []
+    }
   },
   { timestamps: true }
 );

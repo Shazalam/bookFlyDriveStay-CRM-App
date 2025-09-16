@@ -21,7 +21,6 @@ export async function GET(req: Request) {
     return apiResponse({ error: message }, 500);
   }
 }
-
 // ✅ Required fields for booking
 const REQUIRED_FIELDS = [
   "fullName",
@@ -55,6 +54,7 @@ export async function POST(req: Request) {
     const missing = REQUIRED_FIELDS.filter(
       (field) => !data[field] || data[field].toString().trim() === ""
     );
+
     if (missing.length > 0) {
       return apiResponse(
         { error: `Missing required fields: ${missing.join(", ")}` },
@@ -69,9 +69,10 @@ export async function POST(req: Request) {
       phoneNumber: data.phoneNumber,
       rentalCompany: data.rentalCompany,
       confirmationNumber: data.confirmationNumber,
-      vehicleImage: data.vehicleImage || "", // ensure empty string if not provided
+      vehicleImage: data.vehicleImage || "",
       total: data.total ? Number(data.total) : 0,
       mco: data.mco ? Number(data.mco) : 0,
+      modificationFee: data.modificationFee || [], // Set modificationFee array
       payableAtPickup: data.payableAtPickup ? Number(data.payableAtPickup) : 0,
       pickupDate: data.pickupDate || "",
       dropoffDate: data.dropoffDate || "",
@@ -82,9 +83,18 @@ export async function POST(req: Request) {
       cardLast4: data.cardLast4,
       expiration: data.expiration,
       billingAddress: data.billingAddress,
+      dateOfBirth: data.dateOfBirth,
       salesAgent: data.salesAgent || "Unknown Agent",
-      agentId: decoded.id, // from token
+      agentId: decoded.id,
       status: data.status || "BOOKED",
+      // Add initial timeline entry for new booking
+      timeline: [
+        {
+          date: new Date().toISOString(),
+          agentName: data?.salesAgent || "",
+          message: "New booking created"
+        }
+      ]
     };
 
     // ✅ Save booking

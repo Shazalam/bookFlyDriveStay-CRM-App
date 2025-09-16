@@ -20,6 +20,7 @@ import {
 import { IoCarSport } from "react-icons/io5";
 import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
+import ConfirmCancelModal from "@/components/ConfirmCancelModal";
 
 interface Booking {
   _id: string;
@@ -59,6 +60,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
 
   // Fetch bookings from API
   useEffect(() => {
@@ -88,8 +91,6 @@ export default function DashboardPage() {
   }, []);
 
   const cancelBooking = useCallback(async (id: string) => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return;
-
     try {
       const res = await fetch(`/api/bookings/${id}`, {
         method: "DELETE",
@@ -105,7 +106,15 @@ export default function DashboardPage() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error cancelling booking";
       toast.error(message);
+    } finally {
+      setShowCancelModal(false);
+      setBookingToCancel(null);
     }
+  }, []);
+
+  const handleCancelClick = useCallback((id: string) => {
+    setBookingToCancel(id);
+    setShowCancelModal(true);
   }, []);
 
   const handleSort = useCallback((key: SortableField) => {
@@ -240,7 +249,7 @@ export default function DashboardPage() {
     ],
     [statusCounts]
   );
-
+  
   if (loading) return <LoadingScreen />;
 
   return (
@@ -301,8 +310,8 @@ export default function DashboardPage() {
               <thead className="bg-gray-50">
                 <tr>
                   {[
-                    { key: 'fullName', label: 'Customer' },
                     { key: 'createdAt', label: 'Date' },
+                    { key: 'fullName', label: 'Customer' },
                     { key: 'rentalCompany', label: 'Company' },
                     { key: 'total', label: 'Total' },
                     { key: 'pickupDate', label: 'Pickup Date' },
@@ -329,7 +338,10 @@ export default function DashboardPage() {
                     Details
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Edit
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Modify
                   </th>
                 </tr>
               </thead>
@@ -348,7 +360,7 @@ export default function DashboardPage() {
                       booking={booking}
                       expanded={expandedRow === booking._id}
                       onExpand={() => setExpandedRow(expandedRow === booking._id ? null : booking._id)}
-                      onCancel={cancelBooking}
+                      onCancel={handleCancelClick}
                       getStatusIcon={getStatusIcon}
                       getStatusColor={getStatusColor}
                     />
@@ -389,6 +401,26 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      {
+        showCancelModal && (
+          <>
+            {/* Cancel Confirmation Modal */}
+            <ConfirmCancelModal
+              isOpen={showCancelModal}
+              onClose={() => {
+                setShowCancelModal(false);
+                setBookingToCancel(null);
+              }}
+              onConfirm={() => {
+                if (bookingToCancel) {
+                  cancelBooking(bookingToCancel);
+                }
+              }}
+            />
+          </>
+        )
+      }
+
     </div>
   );
 }
@@ -443,7 +475,7 @@ function BookingRow({
           <div className="text-sm text-gray-900">{booking.rentalCompany}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm font-medium text-gray-900">${booking.total.toFixed(2)}</div>
+          <div className="text-sm font-medium text-gray-900">${Number(booking.total).toFixed(2)}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="text-sm text-gray-900">{new Date(booking.pickupDate).toLocaleDateString()}</div>
@@ -466,8 +498,21 @@ function BookingRow({
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex items-center gap-2">
+            {/* Existing Customer */}
             <Link
-              href={`/bookings/${booking._id}/edit`}
+              href={`/bookings/new?id=${booking._id}`}
+              className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <FiEdit className="w-4 h-4" />
+            </Link>
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+          <div className="flex items-center gap-2">
+            {/* Existing Customer */}
+            <Link
+              href={`/bookings/modification?id=${booking._id}`}
               className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
@@ -509,8 +554,8 @@ function BookingRow({
                   Rental Details
                 </h4>
                 <div className="text-sm">
-                  <div className="text-gray-600">MCO: {booking.mco}</div>
-                  <div className="text-gray-600">Payable at Pickup: ${booking.payableAtPickup.toFixed(2)}</div>
+                  <div className="text-gray-600">MCO: ${Number(booking.mco)}</div>
+                  <div className="text-gray-600">Payable at Pickup: ${Number(booking.payableAtPickup).toFixed(2)}</div>
                 </div>
               </div>
 
