@@ -13,6 +13,14 @@ import { fetchBookingById, resetOperationStatus } from "@/app/store/slices/booki
 import ErrorComponent from "@/components/ErrorComponent";
 import { bookingModificationTemplate } from "@/lib/email/templates/modification";
 
+
+// Define the FormattedBookingChange interface locally
+interface FormattedBookingChange {
+  field: string;
+  oldValue: string | number | null;
+  newValue: string | number | null;
+}
+
 export default function BookingDetailPage() {
     const { id } = useParams();
     const [activeTab, setActiveTab] = useState("details");
@@ -50,47 +58,50 @@ export default function BookingDetailPage() {
     };
 
     // 3. Update the handleSend function to open the modal
-    // const handleSend = async (type: string) => {
-    //     if (!booking) return;
-
-    //     const emailData: BookingTemplateData = {
-    //         fullName: booking.fullName,
-    //         email: booking.email,
-    //         phoneNumber: booking.phoneNumber,
-    //         rentalCompany: booking.rentalCompany,
-    //         confirmationNumber: booking.confirmationNumber,
-    //         vehicleImage: booking.vehicleImage,
-    //         total: booking.total,
-    //         mco: booking.mco,
-    //         payableAtPickup: booking.payableAtPickup,
-    //         // 🐛 FIX HERE: Pass original strings directly to email template
-    //         pickupDate: booking.pickupDate, // Use the YYYY-MM-DD string
-    //         dropoffDate: booking.dropoffDate, // Use the YYYY-MM-DD string
-    //         pickupTime: booking.pickupTime, // Use the HH:MM AM/PM string
-    //         dropoffTime: booking.dropoffTime, // Use the HH:MM AM/PM string
-    //         pickupLocation: booking.pickupLocation,
-    //         dropoffLocation: booking.dropoffLocation,
-    //         cardLast4: booking.cardLast4,
-    //         expiration: booking.expiration,
-    //         billingAddress: booking.billingAddress,
-    //         salesAgent: booking.salesAgent
-    //     };
-
-    //     // For now, we only have one template. You can expand this with a switch statement for different email types.
-    //     switch (type) {
-    //         case "General":
-    //             setEmailPreviewHtml(bookingTemplate(emailData));
-    //             setIsModalOpen(true);
-    //             break;
-    //         // Add cases for "Voucher", "Payment Link", etc. as you create those templates
-    //         default:
-    //             toast.error(`Email template for "${type}" is not yet implemented.`);
-    //             break;
-    //     }
-    // };
-
-    const handleSend = async (type: string) => {
+     const handleSend = async (type: string) => {
         if (!booking) return;
+
+        // Get the last timeline entry (most recent modification)
+        const lastTimelineEntry = booking.timeline?.[booking.timeline.length - 1];
+        const lastTimeModificationFee = booking.modificationFee?.[booking.modificationFee.length - 1] || {}
+        const modificationMCO = lastTimeModificationFee?.charge || ""
+        // Extract changes from timeline or create empty array
+        const changes = lastTimelineEntry?.changes || [];
+
+        // Transform changes to match the expected format
+        const formattedChanges: FormattedBookingChange[] = changes.map(change => {
+            // Parse the text to extract field, oldValue, and newValue
+            const match = change.text.match(/(.*?) updated from "(.*?)" to "(.*?)"/);
+
+            if (match) {
+                return {
+                    field: match[1],
+                    oldValue: match[2],
+                    newValue: match[3]
+                };
+            }
+
+            // For other formats like "Modification fee added: $55"
+            const feeMatch = change.text.match(/(.*?): (.*)/);
+            if (feeMatch) {
+                return {
+                    field: feeMatch[1],
+                    oldValue: null,
+                    newValue: feeMatch[2]
+                };
+            }
+
+            // Fallback - just use the text as the field
+            return {
+                field: change.text,
+                oldValue: null,
+                newValue: null
+            };
+        });
+
+        // Log changes for debugging
+        console.log("Original changes:", changes);
+        console.log("Formatted changes:", formattedChanges);
 
         const emailData: BookingTemplateData = {
             fullName: booking.fullName,
@@ -111,7 +122,9 @@ export default function BookingDetailPage() {
             cardLast4: booking.cardLast4,
             expiration: booking.expiration,
             billingAddress: booking.billingAddress,
-            salesAgent: booking.salesAgent
+            salesAgent: booking.salesAgent,
+            changes: formattedChanges,
+            modificationMCO:modificationMCO
         };
 
         try {
@@ -533,7 +546,7 @@ export default function BookingDetailPage() {
                                                             <div className="ml-4 flex-1">
                                                                 <div className="flex items-center justify-between">
                                                                     <p className="text-sm font-medium text-gray-900">
-                                                                        {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {event.agentName}
+                                                                        {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -<strong> ( {event.agentName} )</strong>
                                                                     </p>
                                                                 </div>
 
@@ -599,7 +612,7 @@ export default function BookingDetailPage() {
                             onClose={() => setIsModalOpen(false)}
                             onSubmit={handleEmailSubmit}
                             isSubmitting={isSendingEmail}
-                            title="Email Preview"
+                            title={emailSubject  || "Email Preview"}
                             status={booking.status}
                         >
                             <iframe

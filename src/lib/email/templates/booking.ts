@@ -1,3 +1,15 @@
+export interface BookingChange {
+  text: string;
+  _id?: string;
+}
+
+export interface FormattedBookingChange {
+  field: string;
+  oldValue: string | number | null;
+  newValue: string | number | null;
+}
+
+
 export interface BookingTemplateData {
   fullName: string;
   email?: string;
@@ -20,6 +32,8 @@ export interface BookingTemplateData {
   billingAddress?: string;
   salesAgent?: string;
   confirmationNumber?: string;
+  changes?: FormattedBookingChange[];
+  modificationMCO?:string
 }
 
 export const bookingTemplate = (data: BookingTemplateData) => {
@@ -41,8 +55,9 @@ export const bookingTemplate = (data: BookingTemplateData) => {
             <tr>
               <td style="padding:20px 20px 8px;color:#111827;font-family:Arial,Helvetica,sans-serif;">
                 <p style="margin:0 0 10px;font-size:15px;">Dear <strong>${data.fullName}</strong>,</p>
+                 <p style="margin:0 0 10px;font-size:15px;font-weight:600">Greetings of the day!</p>
                 <p style="margin:0 0 14px;font-size:14px;line-height:1.6;">
-                  Greetings of the day! Please review the <strong>car rental itinerary</strong> and
+                  Please review the <strong>car rental itinerary</strong> and
                   <strong>payment breakdown</strong> below. If everything looks correct, kindly
                   <strong>reply to this email with "I acknowledge"</strong> and provide your
                   <strong>driving license number</strong> to proceed.
@@ -59,8 +74,8 @@ export const bookingTemplate = (data: BookingTemplateData) => {
                   <div style="font-size:14px;line-height:1.5;">
                     <div><strong>Rental Company:</strong> ${data.rentalCompany || "—"}</div>
                     ${data.confirmationNumber
-    ? `<div><strong>Confirmation:</strong> #${data.confirmationNumber}</div>`
-    : ""}
+      ? `<div><strong>Confirmation:</strong> #${data.confirmationNumber}</div>`
+      : ""}
                   </div>
                 </div>
 
@@ -183,7 +198,7 @@ export const bookingTemplate = (data: BookingTemplateData) => {
   </div>
   `;
 
-  const subject = `${data.rentalCompany || "Car Rental"} - Booking Confirmation #${data.confirmationNumber || ""}`;
-  
+  const subject = `${data.rentalCompany || ""} - Car Rental Confirmation #${data.confirmationNumber || ""}`;
+
   return { subject, html };
 };

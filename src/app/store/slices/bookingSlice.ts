@@ -32,6 +32,7 @@ export interface Booking {
     agentName: string;
     changes: { text: string }[];
   }[];
+  changes: { text: string }[]
 }
 
 interface BookingState {

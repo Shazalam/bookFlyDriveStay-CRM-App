@@ -249,7 +249,7 @@ export default function DashboardPage() {
     ],
     [statusCounts]
   );
-  
+
   if (loading) return <LoadingScreen />;
 
   return (
@@ -511,13 +511,23 @@ function BookingRow({
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex items-center gap-2">
             {/* Existing Customer */}
-            <Link
-              href={`/bookings/modification?id=${booking._id}`}
-              className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <FiEdit className="w-4 h-4" />
-            </Link>
+            {booking.status !== "CANCELLED" ? (
+              <Link
+                href={`/bookings/modification?id=${booking._id}`}
+                className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FiEdit className="w-4 h-4" />
+              </Link>
+            ) : (
+              <span
+                className="text-gray-400 p-2 rounded-lg cursor-not-allowed opacity-50"
+                title="Cannot modify a cancelled booking"
+              >
+                <FiEdit className="w-4 h-4" />
+              </span>
+            )}
+
 
             <button
               onClick={(e) => {
