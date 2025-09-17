@@ -180,16 +180,6 @@ export default function ModifyBookingPage() {
     }
   }, [currentBooking, id]);
 
-
-  // useEffect(() => {
-  //   if (newModificationFee) {
-  //     setForm(prev => ({
-  //       ...prev,
-  //       modificationFee: [...prev.modificationFee, { charge: newModificationFee }]
-  //     }));
-  //   }
-  // }, [newModificationFee])
-
   // Handle adding a new modification fee
   const addModificationFee = () => {
     if (newModificationFee) {
@@ -197,7 +187,6 @@ export default function ModifyBookingPage() {
         ...prev,
         modificationFee: [...prev.modificationFee, { charge: newModificationFee }]
       }));
-      // setNewModificationFee("");
     }
   };
 
@@ -535,57 +524,7 @@ export default function ModifyBookingPage() {
               💳 Payment Information
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              {/* {
-                id && (
-                  <>
-                    <InputField
-                      label="Total ($)"
-                      name="total"
-                      value={form.total}
-                      onChange={handleChange}
-                      placeholder="Enter Total"
-                      readOnly={!editable.total}
-                    />
-
-                    <InputField
-                      label="Payable at Pickup ($)"
-                      name="payableAtPickup"
-                      value={form.payableAtPickup}
-                      onChange={handleChange}
-                      placeholder="Enter Payable At Pickup"
-                      readOnly={!editable.payableAtPickup}
-                    />
-                    <InputField
-                      label="MCO"
-                      name="mco"
-                      value={form.mco}
-                      onChange={handleChange}
-                      placeholder="MCO Reference"
-                      readOnly={!editable.mco}
-                    />
-                  </>
-                )
-              } */}
-
               {/* Add new modification fee */}
-              {/* <div className="flex items-center gap-2 mt-2">
-                <InputField
-                  label="Modification Fee"
-                  name="fee"
-                  value={newModificationFee}
-                  onChange={(e) => setNewModificationFee(e.target.value)}
-                  placeholder="Enter Modification fee"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={addModificationFee}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                >
-                  Add
-                </button>
-              </div> */}
-
               {id && (
                 <>
                   <InputField
@@ -740,3 +679,4 @@ export default function ModifyBookingPage() {
     </div>
   );
 }
+
