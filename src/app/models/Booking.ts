@@ -1,5 +1,15 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
+export interface INote {
+  _id?: Types.ObjectId;
+  text: string;
+  agentName: string;
+  createdAt: Date;
+  createdBy?: Types.ObjectId;
+}
+
+
+
 export interface IBooking extends Document {
   fullName: string;
   email: string;
@@ -37,11 +47,7 @@ export interface IBooking extends Document {
   }[];
 
   // Add notes field
-  notes: {
-    text: string;
-    createdAt: Date;
-    createdBy: Types.ObjectId;
-  }[];
+  notes: INote[];
 }
 
 const BookingSchema = new Schema<IBooking>(
@@ -99,6 +105,10 @@ const BookingSchema = new Schema<IBooking>(
             type: String,
             required: true
           },
+          agentName: {
+            type: String,
+            required: true
+          },
           createdAt: {
             type: Date,
             default: Date.now
@@ -111,6 +121,7 @@ const BookingSchema = new Schema<IBooking>(
       ],
       default: []
     }
+
   },
   { timestamps: true }
 );

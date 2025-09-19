@@ -18,7 +18,7 @@ export default function LoadingButton({
     <button
       {...props}
       disabled={loading || props.disabled}
-      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium shadow transition 
+      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium shadow cursor-pointer transition 
         ${props.disabled || loading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"} 
         ${className}`}
     >
