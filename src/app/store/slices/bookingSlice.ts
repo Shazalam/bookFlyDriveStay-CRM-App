@@ -32,12 +32,22 @@ export interface Booking {
     agentName: string;
     changes: { text: string }[];
   }[];
+  // Add notes field
+  notes: {
+    _id: string;
+    text: string;
+    agentName: string;
+    createdAt: string;
+    createdBy?: string;
+  }[];
+
   changes: { text: string }[]
 }
 
 interface BookingState {
   currentBooking: Booking | null;
   loading: boolean;
+  actionLoading:boolean;
   error: string | null;
   operation: "idle" | "pending" | "succeeded" | "failed";
 }
@@ -45,6 +55,7 @@ interface BookingState {
 const initialState: BookingState = {
   currentBooking: null,
   loading: false,
+  actionLoading:false,
   error: null,
   operation: "idle",
 };
@@ -104,6 +115,79 @@ export const fetchBookingById = createAsyncThunk<
   }
 });
 
+
+// --- Note-related thunks ---
+export const addNote = createAsyncThunk<
+  Booking,
+  { bookingId: string; text: string },
+  { rejectValue: string }
+>("booking/addNote", async ({ bookingId, text }, { rejectWithValue }) => {
+  try {
+    const res = await fetch(`/api/bookings/${bookingId}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to add note");
+    }
+
+    const data = await res.json();
+    return data.booking as Booking;
+  } catch (err) {
+    return rejectWithValue(err instanceof Error ? err.message : "Error adding note");
+  }
+});
+
+export const updateNote = createAsyncThunk<
+  Booking,
+  { bookingId: string; noteId: string; text: string },
+  { rejectValue: string }
+>("booking/updateNote", async ({ bookingId, noteId, text }, { rejectWithValue }) => {
+  try {
+    const res = await fetch(`/api/bookings/${bookingId}/notes/${noteId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to update note");
+    }
+
+    const data = await res.json();
+    return data.booking as Booking;
+  } catch (err) {
+    return rejectWithValue(err instanceof Error ? err.message : "Error updating note");
+  }
+});
+
+export const deleteNote = createAsyncThunk<
+  Booking,
+  { bookingId: string; noteId: string },
+  { rejectValue: string }
+>("booking/deleteNote", async ({ bookingId, noteId }, { rejectWithValue }) => {
+  try {
+    const res = await fetch(`/api/bookings/${bookingId}/notes/${noteId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to delete note");
+    }
+
+    const data = await res.json();
+    return data.booking as Booking;
+  } catch (err) {
+    return rejectWithValue(err instanceof Error ? err.message : "Error deleting note");
+  }
+});
+
+
 const bookingSlice = createSlice({
   name: "booking",
   initialState,
@@ -149,7 +233,59 @@ const bookingSlice = createSlice({
       .addCase(fetchBookingById.rejected, (state, action) => {
         state.error = action.payload || "Failed to fetch booking";
         state.loading = false;
+      })
+      // -------------------- ADD NOTE --------------------
+      .addCase(addNote.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+        state.operation = "pending";
+      })
+      .addCase(addNote.fulfilled, (state, action: PayloadAction<Booking>) => {
+        state.currentBooking = action.payload;
+        state.actionLoading = false;
+        state.operation = "succeeded";
+      })
+      .addCase(addNote.rejected, (state, action) => {
+        state.error = action.payload || "Failed to add note";
+        state.actionLoading = false;
+        state.operation = "failed";
+      })
+
+      // -------------------- UPDATE NOTE --------------------
+      .addCase(updateNote.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+        state.operation = "pending";
+      })
+      .addCase(updateNote.fulfilled, (state, action: PayloadAction<Booking>) => {
+        state.currentBooking = action.payload;
+        state.actionLoading = false;
+        state.operation = "succeeded";
+      })
+      .addCase(updateNote.rejected, (state, action) => {
+        state.error = action.payload || "Failed to update note";
+        state.actionLoading = false;
+        state.operation = "failed";
+      })
+
+      // -------------------- DELETE NOTE --------------------
+      .addCase(deleteNote.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+        state.operation = "pending";
+      })
+      .addCase(deleteNote.fulfilled, (state, action: PayloadAction<Booking>) => {
+        state.currentBooking = action.payload;
+        state.actionLoading = false;
+        state.operation = "succeeded";
+      })
+      .addCase(deleteNote.rejected, (state, action) => {
+        state.error = action.payload || "Failed to delete note";
+        state.actionLoading = false;
+        state.operation = "failed";
       });
+
+
   },
 });
 

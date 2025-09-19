@@ -2,23 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { FiMail, FiPhone, FiCalendar, FiDollarSign, FiFileText, FiClock, FiChevronDown, FiChevronUp, FiUser, FiMapPin, FiCreditCard, FiCheckCircle, FiGift, FiRefreshCw, FiLink, FiSend } from "react-icons/fi";
+import { FiMail, FiPhone, FiCalendar, FiDollarSign, FiFileText, FiClock, FiChevronDown, FiChevronUp, FiUser, FiMapPin, FiCreditCard, FiCheckCircle, FiGift, FiRefreshCw, FiLink, FiSend, FiTrash2, FiEdit2, FiEdit3, FiEdit } from "react-icons/fi";
 import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
 import { bookingTemplate, BookingTemplateData } from "@/lib/email/templates/booking";
 import Modal from "@/components/PreviewModal";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { fetchBookingById, resetOperationStatus } from "@/app/store/slices/bookingSlice";
+import { deleteNote, updateNote, addNote, fetchBookingById, resetOperationStatus } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
 import { bookingModificationTemplate } from "@/lib/email/templates/modification";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import Link from "next/link";
 
 
 // Define the FormattedBookingChange interface locally
 interface FormattedBookingChange {
-  field: string;
-  oldValue: string | number | null;
-  newValue: string | number | null;
+    field: string;
+    oldValue: string | number | null;
+    newValue: string | number | null;
+}
+
+interface Note {
+    _id: string;
+    text: string;
+    agentName: string;
+    createdAt?: string;
+    createdBy?: string;
+    updatedAt?: string;
 }
 
 export default function BookingDetailPage() {
@@ -36,8 +47,73 @@ export default function BookingDetailPage() {
     const [emailPreviewHtml, setEmailPreviewHtml] = useState("");
     const [isSendingEmail, setIsSendingEmail] = useState(false); // State for loading indicator
     const dispatch = useAppDispatch();
-    const { currentBooking: booking, loading, error } = useAppSelector((state) => state.booking);
+    const { currentBooking: booking, loading, error, actionLoading } = useAppSelector((state) => state.booking);
+    // Add these states and functions to your component
+    const [newNote, setNewNote] = useState("");
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editingNoteText, setEditingNoteText] = useState("");
 
+    const [openDialog, setOpenDialog] = useState(false);
+    const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
+    const handleDeleteClick = (note: Note) => {
+        setSelectedNote(note);
+        setOpenDialog(true);
+    };
+
+    const handleEditClick = (note: Note) => {
+        setEditingNoteId(note._id);
+        setEditingNoteText(note.text);
+    };
+
+    const cancelEdit = () => {
+        setEditingNoteId(null);
+        setEditingNoteText("");
+    };
+
+    const handleAddNote = () => {
+        if (!newNote.trim()) return;
+        dispatch(addNote({ bookingId: id as string, text: newNote.trim() }))
+            .unwrap()
+            .then(() => {
+                toast.success("Note added successfully!");
+                setNewNote("");
+            })
+            .catch((err) => toast.error(err));
+    };
+
+    // Update Note
+    const handleUpdateNote = () => {
+        if (!editingNoteId || !editingNoteText.trim()) return;
+        dispatch(updateNote({
+            bookingId: id as string,
+            noteId: editingNoteId,
+            text: editingNoteText.trim()
+        }))
+            .unwrap()
+            .then(() => {
+                toast.success("Note updated successfully!");
+                setEditingNoteId(null);
+                setEditingNoteText("");
+            })
+            .catch((err) => toast.error(err));
+    };
+
+    // Delete Note
+    const handleDeleteNote = () => {
+        if (!selectedNote) return;
+        dispatch(deleteNote({
+            bookingId: id as string,
+            noteId: selectedNote._id
+        }))
+            .unwrap()
+            .then(() => {
+                toast.success("Note deleted successfully!");
+                setSelectedNote(null);
+                setOpenDialog(false);
+            })
+            .catch((err) => toast.error(err));
+    };
     const getEmailTemplate = (status: string, emailData: BookingTemplateData) => {
         switch (status) {
             case "MODIFIED":
@@ -58,13 +134,14 @@ export default function BookingDetailPage() {
     };
 
     // 3. Update the handleSend function to open the modal
-     const handleSend = async (type: string) => {
+    const handleSend = async (type: string) => {
         if (!booking) return;
 
         // Get the last timeline entry (most recent modification)
         const lastTimelineEntry = booking.timeline?.[booking.timeline.length - 1];
         const lastTimeModificationFee = booking.modificationFee?.[booking.modificationFee.length - 1] || {}
         const modificationMCO = lastTimeModificationFee?.charge || ""
+
         // Extract changes from timeline or create empty array
         const changes = lastTimelineEntry?.changes || [];
 
@@ -124,7 +201,7 @@ export default function BookingDetailPage() {
             billingAddress: booking.billingAddress,
             salesAgent: booking.salesAgent,
             changes: formattedChanges,
-            modificationMCO:modificationMCO
+            modificationMCO: modificationMCO
         };
 
         try {
@@ -519,16 +596,18 @@ export default function BookingDetailPage() {
                                     </div>
                                 </div>
                             )}
+
                             {activeTab === "timeline" && (
-                                <div>
+                                <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
                                     <h2 className="text-lg font-semibold text-gray-800 mb-4">History</h2>
 
                                     {booking.timeline && booking.timeline.length > 0 ? (
-                                        <div className="space-y-6">
-                                            {booking.timeline.map((event, index) => {
+                                        <div className="space-y-6 max-h-100 overflow-y-auto pr-1 custom-scrollbar">
+                                            {/* Reverse the timeline array to show most recent first */}
+                                            {booking.timeline.slice().reverse().map((event, index, array) => {
                                                 const eventDate = new Date(event.date);
-                                                const isLast = index === (booking.timeline?.length ?? 0) - 1;
-                                                console.log("timeline =>", booking)
+                                                const isLast = index === array.length - 1;
+
                                                 return (
                                                     <div key={index} className="relative">
                                                         {/* Timeline connector */}
@@ -546,7 +625,12 @@ export default function BookingDetailPage() {
                                                             <div className="ml-4 flex-1">
                                                                 <div className="flex items-center justify-between">
                                                                     <p className="text-sm font-medium text-gray-900">
-                                                                        {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -<strong> ( {event.agentName} )</strong>
+                                                                        {eventDate.toLocaleDateString()} at{" "}
+                                                                        {eventDate.toLocaleTimeString([], {
+                                                                            hour: "2-digit",
+                                                                            minute: "2-digit",
+                                                                        })}{" "}
+                                                                        - <strong>( {event.agentName} )</strong>
                                                                     </p>
                                                                 </div>
 
@@ -572,16 +656,156 @@ export default function BookingDetailPage() {
                                         <div className="text-center py-8 bg-gray-50 rounded-lg">
                                             <FiClock className="mx-auto h-12 w-12 text-gray-400" />
                                             <h3 className="mt-2 text-sm font-medium text-gray-900">No timeline events</h3>
-                                            <p className="mt-1 text-sm text-gray-500">Activity will appear here as changes are made to this booking.</p>
+                                            <p className="mt-1 text-sm text-gray-500">
+                                                Activity will appear here as changes are made to this booking.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
                             )}
 
+
                             {activeTab === "notes" && (
-                                <div className="p-6 bg-gray-50 rounded-xl border border-gray-200">
-                                    <h3 className="text-lg font-medium text-gray-800 mb-4">Notes</h3>
-                                    <p className="text-gray-600">No notes have been added yet.</p>
+                                <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                    {/* Header */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Notes
+                                        </h3>
+                                        <span className="bg-indigo-50 text-indigo-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                            {booking.notes?.length || 0} notes
+                                        </span>
+                                    </div>
+
+                                    {/* Input box */}
+                                    <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        {editingNoteId ? (
+                                            <>
+                                                <textarea
+                                                    value={editingNoteText}
+                                                    onChange={(e) => setEditingNoteText(e.target.value)}
+                                                    placeholder="Edit your note..."
+                                                    rows={4}
+                                                    className="w-full p-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 outline-none resize-none text-gray-800 placeholder-gray-400 transition-all duration-200"
+                                                />
+                                                <div className="flex justify-start gap-2 pt-3">
+                                                    <button
+                                                        onClick={handleUpdateNote}
+                                                        disabled={!editingNoteText.trim() || actionLoading}
+                                                        className="px-4 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 transition shadow-sm hover:shadow-md disabled:opacity-50"
+                                                    >
+                                                        {actionLoading ? "Updating..." : "Update"}
+                                                    </button>
+                                                    <button
+                                                        onClick={cancelEdit}
+                                                        className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300 transition"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <textarea
+                                                    value={newNote}
+                                                    onChange={(e) => setNewNote(e.target.value)}
+                                                    placeholder="Write a quick note..."
+                                                    rows={1}
+                                                    onFocus={(e) => (e.target.rows = 4)}
+                                                    onBlur={(e) => {
+                                                        if (!newNote.trim()) e.target.rows = 1;
+                                                    }}
+                                                    className="w-full p-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 outline-none resize-none text-gray-800 placeholder-gray-400 transition-all duration-200"
+                                                />
+                                                {newNote.trim() && (
+                                                    <div className="flex justify-start gap-2 pt-3">
+                                                        <button
+                                                            onClick={handleAddNote}
+                                                            disabled={!newNote.trim() || actionLoading}
+                                                            className="px-4 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 transition shadow-sm hover:shadow-md disabled:opacity-50"
+                                                        >
+                                                            {actionLoading ? "Adding..." : "Save"}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setNewNote("")}
+                                                            className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300 transition"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Notes list */}
+                                    {!booking.notes || booking.notes.length === 0 ? (
+                                        <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                            <FiEdit2 className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                                            <h3 className="text-sm font-medium text-gray-700 mb-1">No notes yet</h3>
+                                            <p className="text-gray-500 text-sm">
+                                                Add your first note to keep track of important info
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 max-h-100 overflow-y-auto pr-1 custom-scrollbar">
+                                            {booking.notes.slice().reverse().map((note) => (
+                                                <div
+                                                    key={note._id}
+                                                    className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        {/* Avatar with initials */}
+                                                        <div className="w-9 h-9 flex-shrink-0 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-sm font-semibold">
+                                                            {note.agentName?.[0] || "A"}
+                                                        </div>
+
+                                                        <div className="flex-1">
+                                                            {/* Top row: name + date/time + actions */}
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                                                    <span className="font-semibold text-indigo-700 text-sm">
+                                                                        {note.agentName || "Agent"}
+                                                                    </span>
+                                                                    <span className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-md w-fit mt-0.5 sm:mt-0">
+                                                                        <FiClock className="w-3.5 h-3.5" />
+                                                                        {new Date(note.createdAt).toLocaleDateString()} •{" "}
+                                                                        {new Date(note.createdAt).toLocaleTimeString([], {
+                                                                            hour: "2-digit",
+                                                                            minute: "2-digit",
+                                                                        })}
+                                                                    </span>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={() => handleEditClick(note)}
+                                                                        className="text-gray-400 hover:text-blue-500 p-1 rounded-full hover:bg-blue-50 transition"
+                                                                        title="Edit note"
+                                                                    >
+                                                                        <FiEdit2 className="h-4 w-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteClick(note)}
+                                                                        className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition"
+                                                                        title="Delete note"
+                                                                    >
+                                                                        <FiTrash2 className="h-4 w-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Note text */}
+                                                            <p className="text-gray-700 text-sm leading-relaxed mt-1">{note.text}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -598,6 +822,27 @@ export default function BookingDetailPage() {
                                     <p className="text-gray-600">No files have been uploaded yet.</p>
                                 </div>
                             )}
+
+                            <div className="flex items-center gap-3 justify-start mt-5">
+                                {/* New Booking Button */}
+                                <Link
+                                    href={`/bookings/new?id=${id}`}
+                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-2.5 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm hover:scale-105"
+                                >
+                                    <FiEdit className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Edit Booking</span>
+                                </Link>
+
+                                {/* Modification Button */}
+                                <Link
+                                    href={`/bookings/modification?id=${id}`}
+                                    className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-2.5 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm hover:scale-105"
+                                >
+                                    <FiEdit3 className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Modification</span>
+                                </Link>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -612,7 +857,7 @@ export default function BookingDetailPage() {
                             onClose={() => setIsModalOpen(false)}
                             onSubmit={handleEmailSubmit}
                             isSubmitting={isSendingEmail}
-                            title={emailSubject  || "Email Preview"}
+                            title={emailSubject || "Email Preview"}
                             status={booking.status}
                         >
                             <iframe
@@ -625,6 +870,18 @@ export default function BookingDetailPage() {
 
                 )
             }
+
+            {
+                openDialog && (
+                    <DeleteConfirmDialog
+                        open={openDialog}
+                        onClose={() => setOpenDialog(false)}
+                        onConfirm={handleDeleteNote}
+                        noteText={selectedNote?.text}
+                    />
+                )
+            }
+
 
 
         </>
