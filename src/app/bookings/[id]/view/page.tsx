@@ -32,6 +32,13 @@ interface Note {
     updatedAt?: string;
 }
 
+interface Agent {
+  id: string;
+  name: string;
+  email: string;
+}
+
+
 export default function BookingDetailPage() {
     const { id } = useParams();
     const [activeTab, setActiveTab] = useState("details");
@@ -40,6 +47,7 @@ export default function BookingDetailPage() {
         contact: true,
         company: true
     });
+    const [agent, setAgent] = useState<Agent | null>(null);
 
     // 2. Rename states for clarity
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,6 +89,19 @@ export default function BookingDetailPage() {
             })
             .catch((err) => toast.error(err));
     };
+
+    // Fetch logged-in agent
+    useEffect(() => {
+        async function fetchUser() {
+            const res = await fetch("/api/auth/me", { credentials: "include" });
+            const data = await res.json();
+            console.log("agent =>", data)
+            if (data.user) {
+                setAgent(data?.user)
+            }
+        }
+        fetchUser();
+    }, []);
 
     // Update Note
     const handleUpdateNote = () => {
@@ -299,6 +320,7 @@ export default function BookingDetailPage() {
         }).replace(/(am|pm)/i, match => match.toUpperCase());
     };
 
+
     if (error) {
         return (
             <ErrorComponent
@@ -389,7 +411,8 @@ export default function BookingDetailPage() {
                                     <div className="p-4 border-t border-gray-200 bg-white">
                                         <div className="flex items-center mb-4">
                                             <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
-                                                {booking.fullName.split(' ').map(n => n[0]).join('')}
+                                                {booking.fullName ? booking.fullName.split(' ').map(n => n[0]).join('') : ''}
+
                                             </div>
                                             <div>
                                                 <h3 className="font-semibold text-gray-800">{booking.fullName}</h3>
@@ -780,22 +803,31 @@ export default function BookingDetailPage() {
                                                                     </span>
                                                                 </div>
 
-                                                                <div className="flex items-center gap-2">
-                                                                    <button
-                                                                        onClick={() => handleEditClick(note)}
-                                                                        className="text-gray-400 hover:text-blue-500 p-1 rounded-full hover:bg-blue-50 transition"
-                                                                        title="Edit note"
-                                                                    >
-                                                                        <FiEdit2 className="h-4 w-4" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteClick(note)}
-                                                                        className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition"
-                                                                        title="Delete note"
-                                                                    >
-                                                                        <FiTrash2 className="h-4 w-4" />
-                                                                    </button>
-                                                                </div>
+
+                                                                {
+                                                                    note?.createdBy === agent?.id && (
+                                                                        < div className="flex items-center gap-2">
+                                                                            <button
+                                                                                onClick={() => handleEditClick(note)}
+                                                                                className="text-gray-400 hover:text-blue-500 p-1 rounded-full hover:bg-blue-50 transition"
+                                                                                title="Edit note"
+                                                                            >
+                                                                                <FiEdit2 className="h-4 w-4" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDeleteClick(note)}
+                                                                                className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition"
+                                                                                title="Delete note"
+                                                                            >
+                                                                                <FiTrash2 className="h-4 w-4" />
+                                                                            </button>
+                                                                        </div>
+                                                                    )
+
+
+                                                                }
+
+
                                                             </div>
 
                                                             {/* Note text */}
@@ -846,7 +878,7 @@ export default function BookingDetailPage() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {
                 isModalOpen && (
