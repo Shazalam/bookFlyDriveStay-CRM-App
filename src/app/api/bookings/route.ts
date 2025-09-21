@@ -21,13 +21,14 @@ export async function GET(req: Request) {
     return apiResponse({ error: message }, 500);
   }
 }
+
+
 // ✅ Required fields for booking
 const REQUIRED_FIELDS = [
   "fullName",
   "email",
   "phoneNumber",
   "rentalCompany",
-  "mco",
   "cardLast4",
   "expiration",
   "billingAddress",
@@ -88,13 +89,17 @@ export async function POST(req: Request) {
       agentId: decoded.id,
       status: data.status || "BOOKED",
       // Add initial timeline entry for new booking
-      timeline: [
-        {
-          date: new Date().toISOString(),
-          agentName: data?.salesAgent || "",
-          message: "New booking created"
-        }
-      ]
+      timeline: Array.isArray(data.timeline) && data.timeline.length > 0
+        ? data.timeline
+        : [
+          {
+            date: new Date().toISOString(),
+            agentName: data?.salesAgent || "",
+            message: "New booking created",
+            changes: [],
+          }
+        ],
+
     };
 
     // ✅ Save booking

@@ -8,10 +8,10 @@ export interface Booking {
   phoneNumber: string;
   rentalCompany: string;
   confirmationNumber: string;
-  vehicleImage: string;
-  total: string;
-  mco: string;
-  payableAtPickup: string;
+  vehicleImage?: string;
+  total?: string;
+  mco?: string;
+  payableAtPickup?: string;
   pickupDate: string;
   dropoffDate: string;
   pickupTime: string;
@@ -22,7 +22,7 @@ export interface Booking {
   expiration: string;
   billingAddress: string;
   salesAgent: string;
-  dateOfBirth: string;
+  dateOfBirth?: string;
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
   createdAt: string;
   modificationFee: { charge: string }[]; // Change to array
@@ -70,6 +70,7 @@ export const saveBooking = createAsyncThunk<
     const method = id ? "PUT" : "POST";
     const url = id ? `/api/bookings/${id}` : "/api/bookings";
 
+    console.log("saveBooking =>", url, id)
     // For updates, remove _id from the data
     const dataToSend = id ?
       Object.fromEntries(Object.entries(formData).filter(([key]) => key !== '_id')) :

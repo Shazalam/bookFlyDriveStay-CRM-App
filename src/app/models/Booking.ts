@@ -16,10 +16,10 @@ export interface IBooking extends Document {
   phoneNumber: string;
   rentalCompany: string;
   confirmationNumber: string;
-  vehicleImage: string;
-  total: string;
-  mco: string;
-  payableAtPickup: string;
+  vehicleImage?: string;
+  total?: string;
+  mco?: string;
+  payableAtPickup?: string;
   pickupDate: string;
   dropoffDate: string;
   pickupTime: string;
@@ -29,11 +29,11 @@ export interface IBooking extends Document {
   cardLast4: string;
   expiration: string;
   billingAddress: string;
-  dateOfBirth: string;
+  dateOfBirth?: string;
   salesAgent: string;
   agentId: Types.ObjectId;  // 🔑 reference
   status: "BOOKED" | "MODIFIED" | "CANCELLED";
-  modificationFee: {
+  modificationFee?: {
     charge: string;
   }[];
   // Add timeline field
@@ -59,7 +59,7 @@ const BookingSchema = new Schema<IBooking>(
     vehicleImage: { type: String, default: "" }, // ✅ ensure it always saves
     confirmationNumber: { type: String, required: true },
     total: { type: String, default: "0.00" },
-    mco: { type: String, required: true },
+    mco: { type: String, default: "0.00" },
     payableAtPickup: { type: String, default: "0.00" },
     pickupDate: { type: String },
     dropoffDate: { type: String },

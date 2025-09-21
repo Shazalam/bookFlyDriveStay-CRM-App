@@ -18,9 +18,9 @@ interface TimelineEntry {
   changes: TimelineChange[];
 }
 
-interface BookingUpdateFields {
-  [key: string]: string | number;
-}
+// interface BookingUpdateFields {
+//   [key: string]: string | number;
+// }
 
 // ✅ GET /api/bookings/:id
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -43,6 +43,152 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 // ✅ PUT /api/bookings/:id
+// export async function PUT(req: Request) {
+//   try {
+//     await connectDB();
+
+//     // ✅ Auth check
+//     const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
+//     if (!token) return apiResponse({ error: "Unauthorized" }, 401);
+
+//     const decoded = verifyToken(token);
+//     if (typeof decoded === "string" || !decoded || !("id" in decoded)) {
+//       return apiResponse({ error: "Invalid token" }, 401);
+//     }
+
+//     // ✅ Get ID from pathname
+//     const pathParts = new URL(req.url).pathname.split("/");
+//     const id = pathParts[pathParts.length - 1];
+
+//     if (!id) return apiResponse({ error: "Booking ID required" }, 400);
+
+//     const data = await req.json();
+
+//     console.log("data ====>", data)
+//     // Get the existing booking
+//     const existingBooking = await Booking.findById(id);
+//     if (!existingBooking) {
+//       return apiResponse({ error: "Booking not found" }, 404);
+//     }
+
+//     // Track all changes for a single timeline entry
+//     const changes: TimelineChange[] = [];
+//     const updatedFields: BookingUpdateFields = {};
+
+//     // Handle modification fees if they are provided
+//     if (data.modificationFee && Array.isArray(data.modificationFee)) {
+//       updatedFields.modificationFee = data.modificationFee;
+//       console.log("modification Fee =>", updatedFields.modificationFee)
+//       // Get the last modification fee
+//       const lastFee = data.modificationFee[data.modificationFee.length - 1];
+//       // Add to timeline if modification fees changed
+//       if (JSON.stringify(existingBooking.modificationFee) !== JSON.stringify(data.modificationFee)) {
+//         changes.push({
+//           text: `Modification fee added: $${lastFee.charge}`,
+//         });
+//       }
+//     }
+//     // List of fields to check for changes
+//     const fieldsToCheck = [
+//       "fullName", "email", "phoneNumber", "rentalCompany", "confirmationNumber",
+//       "vehicleImage", "total", "mco", "payableAtPickup", "pickupDate", "dropoffDate",
+//       "pickupTime", "dropoffTime", "pickupLocation", "dropoffLocation", "cardLast4",
+//       "expiration", "billingAddress", "status", "dateOfBirth"
+//     ];
+
+//     fieldsToCheck.forEach(field => {
+//       const newValue = data[field];
+//       const oldValue = existingBooking[field];
+
+//       // Handle special cases for number fields
+//       if (field === "total" || field === "mco" || field === "payableAtPickup") {
+//         const numNewValue = newValue ? Number(newValue) : 0;
+//         const numOldValue = oldValue ? Number(oldValue) : 0;
+
+//         if (numNewValue !== numOldValue) {
+//           changes.push({
+//             text: `${field} updated from ${numOldValue} to ${numNewValue}`
+//           });
+//           updatedFields[field] = numNewValue;
+//         }
+//       }
+
+//       // Handle date comparisons
+//       else if (field === "pickupDate" || field === "dropoffDate") {
+//         const formattedNewValue = newValue || "";
+//         const formattedOldValue = oldValue || "";
+
+//         if (formattedNewValue !== formattedOldValue) {
+//           changes.push({
+//             text: `${field} updated from ${formattedOldValue} to ${formattedNewValue}`
+//           });
+//           updatedFields[field] = formattedNewValue;
+//         }
+//       }
+
+//       // Handle all other fields
+//       else if (newValue !== undefined && newValue !== oldValue) {
+//         changes.push({
+//           text: `${field} updated from "${oldValue}" to "${newValue}"`
+//         });
+//         updatedFields[field] = newValue;
+//       }
+//     });
+
+//     // Prepare the update payload
+//     const updatePayload: Record<string, unknown> = {
+//       ...updatedFields
+//     };
+
+//     // Add a single timeline entry if there are changes
+//     if (changes.length > 0) {
+//       // Create the timeline entry with proper structure
+//       const timelineEntry: TimelineEntry = {
+//         date: new Date().toISOString(),
+//         message: `Updated ${changes.length} field(s)`,
+//         agentName: data?.salesAgent || "",
+//         changes: changes
+//       };
+
+//       // Use $push to add the timeline entry
+//       updatePayload.$push = {
+//         timeline: timelineEntry
+//       };
+
+//     }
+
+//     // ✅ Update booking
+//     const booking = await Booking.findByIdAndUpdate(
+//       id,
+//       updatePayload,
+//       { new: true }
+//     );
+
+//     console.log("✅ Booking Updated:", booking);
+
+//     return apiResponse({ success: true, booking }, 200);
+//   } catch (err: unknown) {
+//     console.error("PUT /bookings error:", err);
+//     const message = err instanceof Error ? err.message : "Server error";
+//     return apiResponse({ error: message }, 500);
+//   }
+// }
+
+
+
+function formatTime(time: string | null | undefined): string {
+  if (!time) return "";
+  // Expecting input like "23:30" or "08:15"
+  const [hourStr, minuteStr] = time.split(":");
+  let hour = parseInt(hourStr, 10);
+  const minute = minuteStr ?? "00";
+  const ampm = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12; // Convert 0 to 12
+  return `${hour}:${minute} ${ampm}`;
+}
+
+
+// ✅ PUT /api/bookings/:id
 export async function PUT(req: Request) {
   try {
     await connectDB();
@@ -59,116 +205,132 @@ export async function PUT(req: Request) {
     // ✅ Get ID from pathname
     const pathParts = new URL(req.url).pathname.split("/");
     const id = pathParts[pathParts.length - 1];
-
     if (!id) return apiResponse({ error: "Booking ID required" }, 400);
 
     const data = await req.json();
-
-    console.log("data ====>", data)
-    // Get the existing booking
     const existingBooking = await Booking.findById(id);
-    if (!existingBooking) {
-      return apiResponse({ error: "Booking not found" }, 404);
-    }
+    if (!existingBooking) return apiResponse({ error: "Booking not found" }, 404);
 
-    // Track all changes for a single timeline entry
     const changes: TimelineChange[] = [];
-    const updatedFields: BookingUpdateFields = {};
+    const updatedFields: Record<string, unknown> = {}; // ✅ fixed any -> unknown
 
-    // Handle modification fees if they are provided
+    // Map raw fields to human-readable labels
+    const fieldLabels: Record<string, string> = {
+      pickupLocation: "Pickup Location",
+      dropoffLocation: "Dropoff Location",
+      pickupDate: "Pickup Date",
+      dropoffDate: "Dropoff Date",
+      pickupTime: "Pickup Time",
+      dropoffTime: "Dropoff Time",
+      fullName: "Full Name",
+      email: "Email",
+      phoneNumber: "Phone Number",
+      rentalCompany: "Rental Company",
+      confirmationNumber: "Confirmation Number",
+      vehicleImage: "Vehicle Image",
+      total: "Total",
+      mco: "MCO",
+      payableAtPickup: "Payable at Pickup",
+      cardLast4: "Card Last 4 Digits",
+      expiration: "Expiration",
+      billingAddress: "Billing Address",
+      status: "Status",
+      dateOfBirth: "Date of Birth"
+    };
+
+    // Handle modification fees
     if (data.modificationFee && Array.isArray(data.modificationFee)) {
       updatedFields.modificationFee = data.modificationFee;
-      console.log("modification Fee =>", updatedFields.modificationFee)
-      // Get the last modification fee
       const lastFee = data.modificationFee[data.modificationFee.length - 1];
-      // Add to timeline if modification fees changed
       if (JSON.stringify(existingBooking.modificationFee) !== JSON.stringify(data.modificationFee)) {
-        changes.push({
-          text: `Modification fee added: $${lastFee.charge}`,
-        });
+        changes.push({ text: `Modification fee added: $${lastFee.charge}` });
       }
     }
-    // List of fields to check for changes
-    const fieldsToCheck = [
-      "fullName", "email", "phoneNumber", "rentalCompany", "confirmationNumber",
-      "vehicleImage", "total", "mco", "payableAtPickup", "pickupDate", "dropoffDate",
-      "pickupTime", "dropoffTime", "pickupLocation", "dropoffLocation", "cardLast4",
-      "expiration", "billingAddress", "status", "dateOfBirth"
-    ];
+
+    // Fields to check
+    const fieldsToCheck = Object.keys(fieldLabels);
 
     fieldsToCheck.forEach(field => {
       const newValue = data[field];
       const oldValue = existingBooking[field];
 
-      // Handle special cases for number fields
-      if (field === "total" || field === "mco" || field === "payableAtPickup") {
-        const numNewValue = newValue ? Number(newValue) : 0;
-        const numOldValue = oldValue ? Number(oldValue) : 0;
+      // Treat null, undefined, or "null" as empty
+      const oldEmpty = oldValue === null || oldValue === undefined || oldValue === "" || oldValue === "null";
 
-        if (numNewValue !== numOldValue) {
-          changes.push({
-            text: `${field} updated from ${numOldValue} to ${numNewValue}`
-          });
-          updatedFields[field] = numNewValue;
+      // ✅ Use const instead of let
+      const displayOld = oldEmpty ? null : oldValue;
+      const displayNew = newValue ?? "";
+
+      // Handle numeric fields
+      if (["total", "mco", "payableAtPickup"].includes(field)) {
+        const numNew = newValue ? Number(newValue) : 0;
+        const numOld = oldValue ? Number(oldValue) : 0;
+        if (numNew !== numOld) {
+          changes.push({ text: `Change in ${fieldLabels[field]}: from "${numOld}" to "${numNew}"` });
+          updatedFields[field] = numNew;
         }
+        return;
       }
 
-      // Handle date comparisons
-      else if (field === "pickupDate" || field === "dropoffDate") {
-        const formattedNewValue = newValue || "";
-        const formattedOldValue = oldValue || "";
-
-        if (formattedNewValue !== formattedOldValue) {
-          changes.push({
-            text: `${field} updated from ${formattedOldValue} to ${formattedNewValue}`
-          });
-          updatedFields[field] = formattedNewValue;
+      // Handle date fields
+      if (["pickupDate", "dropoffDate"].includes(field)) {
+        const oldDate = oldValue ? oldValue : null;
+        const newDate = newValue ? newValue : null;
+        if (oldDate !== newDate) {
+          if (!oldDate) {
+            changes.push({ text: `Change in ${fieldLabels[field]}: to "${newDate}"` });
+          } else {
+            changes.push({ text: `Change in ${fieldLabels[field]}: from "${oldDate}" to "${newDate}"` });
+          }
+          updatedFields[field] = newDate;
         }
+        return;
+      }
+
+      // Handle pickupTime and dropoffTime
+      if (["pickupTime", "dropoffTime"].includes(field)) {
+        const oldTimeFormatted = oldEmpty ? null : formatTime(oldValue);
+        const newTimeFormatted = newValue ? formatTime(newValue) : "";
+
+        if (oldTimeFormatted !== newTimeFormatted) {
+          if (!oldTimeFormatted) {
+            changes.push({ text: `Change in ${fieldLabels[field]}: to "${newTimeFormatted}"` });
+          } else {
+            changes.push({ text: `Change in ${fieldLabels[field]}: from "${oldTimeFormatted}" to "${newTimeFormatted}"` });
+          }
+          updatedFields[field] = newValue;
+        }
+        return;
       }
 
       // Handle all other fields
-      else if (newValue !== undefined && newValue !== oldValue) {
-        changes.push({
-          text: `${field} updated from "${oldValue}" to "${newValue}"`
-        });
+      if (newValue !== undefined && newValue !== oldValue) {
+        if (oldEmpty) {
+          changes.push({ text: `Change in ${fieldLabels[field]}: to "${displayNew}"` });
+        } else {
+          changes.push({ text: `Change in ${fieldLabels[field]}: from "${displayOld}" to "${displayNew}"` });
+        }
         updatedFields[field] = newValue;
       }
     });
 
-    // Prepare the update payload
-    const updatePayload: Record<string, unknown> = {
-      ...updatedFields
-    };
+    // Prepare update payload
+    const updatePayload: Record<string, unknown> = { ...updatedFields };
 
-    // Add a single timeline entry if there are changes
     if (changes.length > 0) {
-      // Create the timeline entry with proper structure
       const timelineEntry: TimelineEntry = {
         date: new Date().toISOString(),
         message: `Updated ${changes.length} field(s)`,
         agentName: data?.salesAgent || "",
-        changes: changes
+        changes
       };
-
-      // Use $push to add the timeline entry
-      updatePayload.$push = {
-        timeline: timelineEntry
-      };
-
+      updatePayload.$push = { timeline: timelineEntry };
     }
 
-    // ✅ Update booking
-    const booking = await Booking.findByIdAndUpdate(
-      id,
-      updatePayload,
-      { new: true }
-    );
-
-    console.log("✅ Booking Updated:", booking);
-
+    const booking = await Booking.findByIdAndUpdate(id, updatePayload, { new: true });
     return apiResponse({ success: true, booking }, 200);
+
   } catch (err: unknown) {
-    console.error("PUT /bookings error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
   }
