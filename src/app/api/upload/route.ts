@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 
+export const runtime = "nodejs"; // ✅ required for Buffer + Cloudinary streams
+
 export async function POST(req: Request) {
   try {
     const body = await req.formData();
