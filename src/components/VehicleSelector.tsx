@@ -13,8 +13,8 @@ export default function VehicleSelector({ value, onChange }: VehicleSelectorProp
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (value !== "") setPreview(value)
-  }, [value])
+    if (value !== "") setPreview(value);
+  }, [value]);
 
   async function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
     const items = e.clipboardData.items;
@@ -22,21 +22,31 @@ export default function VehicleSelector({ value, onChange }: VehicleSelectorProp
       if (item.type.startsWith("image/")) {
         const file = item.getAsFile();
         if (file) {
+          // ✅ Instant local preview
+          const localUrl = URL.createObjectURL(file);
+          setPreview(localUrl);
+
           setUploading(true);
 
           const formData = new FormData();
           formData.append("file", file);
 
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          });
+          try {
+            const res = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
 
-          const data = await res.json();
-          if (data.success) {
-            const url = data.result.secure_url;
-            setPreview(url);
-            onChange(url); // ✅ only notify parent
+            const data = await res.json();
+            if (data.success) {
+              const url = data.result.secure_url;
+              setPreview(url); // replace local preview with Cloudinary URL
+              onChange(url);   // notify parent
+            } else {
+              console.error("Upload failed:", data.error);
+            }
+          } catch (err) {
+            console.error("Upload error:", err);
           }
 
           setUploading(false);
