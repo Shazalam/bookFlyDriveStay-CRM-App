@@ -10,7 +10,7 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   isSubmitting?: boolean;
-  status: "BOOKED" | "MODIFIED" | "CANCELLED";
+  status: "BOOKED" | "MODIFIED" | "CANCELLED" | "REFUND";
 }
 
 export default function Modal({ isOpen, onClose, onSubmit, title, children, isSubmitting = false, status }: ModalProps) {
@@ -52,6 +52,12 @@ export default function Modal({ isOpen, onClose, onSubmit, title, children, isSu
           text: 'Send Cancellation Notice',
           color: 'bg-red-600 hover:bg-red-700 disabled:bg-red-400',
           loadingText: 'Sending Cancellation...'
+        };
+      case "REFUND":
+        return {
+          text: 'Send Refund Notice',
+          color: 'bg-red-600 hover:bg-red-700 disabled:bg-red-400',
+          loadingText: 'Sending Refund...'
         };
       default:
         return {

@@ -17,10 +17,11 @@ export interface Booking {
   rentalCompany: string;
   confirmationNumber: string;
   vehicleImage: string;
-  total: string;
-  mco: string;
+  total?: string;
+  mco?: string;
+  refundAmount?: string,
   modificationFee: { charge: string }[];   // ✅ important
-  payableAtPickup: string;
+  payableAtPickup?: string;
   pickupDate: string;
   dropoffDate: string;
   pickupTime: string;
@@ -41,14 +42,28 @@ export interface Booking {
     createdBy?: string;
   }[];
   timeline?: TimelineEntry[];
+  amount?: string;
+  giftCode?: string;
+  expirationDate?: string;
+  customerName?: string;
 }
 
 export const rentalCompanies = [
-  "Hertz", "Avis", "Sixt", "Budget", "Enterprise",
-  "Alamo", "National", "Thrifty", "Dollar",
-  "Europcar", "Fox Rent A Car", "Payless", "Zipcar", "Other",
+  "Alamo",
+  "Avis",
+  "Budget",
+  "Dollar",
+  "Enterprise",
+  "Europcar",
+  "Fox Rent A Car",
+  "Hertz",
+  "National",
+  "Other",
+  "Payless",
+  "Sixt",
+  "Thrifty",
+  "Zipcar",
 ];
-
 export const editableGroups = {
   Customer: ["fullName", "email", "phoneNumber"],
   Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],
@@ -80,6 +95,7 @@ export const emptyForm: Booking = {
   vehicleImage: "",
   total: "",
   mco: "",
+  refundAmount: "",
   modificationFee: [],
   payableAtPickup: "",
   pickupDate: "",

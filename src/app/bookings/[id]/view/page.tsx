@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { FiMail, FiPhone, FiCalendar, FiDollarSign, FiFileText, FiClock, FiChevronDown, FiChevronUp, FiUser, FiMapPin, FiCreditCard, FiCheckCircle, FiGift, FiRefreshCw, FiLink, FiSend, FiTrash2, FiEdit2, FiEdit3, FiEdit } from "react-icons/fi";
+import { FaRegCalendarAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
 import Image from "next/image";
@@ -12,8 +13,13 @@ import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { deleteNote, updateNote, addNote, fetchBookingById, resetOperationStatus } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
 import { bookingModificationTemplate } from "@/lib/email/templates/modification";
+import { cancellationTemplate } from "@/lib/email/templates/cancellation";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import Link from "next/link";
+import { refundTemplate } from "@/lib/email/templates/refund";
+import UrlInputModal from "@/components/UrlInputModal";
+import GiftCardModal from "@/components/GiftCardModal";
+import { giftCardTemplate, GiftCardTemplateData } from "@/lib/email/templates/giftCard";
 
 
 // Define the FormattedBookingChange interface locally
@@ -33,9 +39,17 @@ interface Note {
 }
 
 interface Agent {
-  id: string;
-  name: string;
-  email: string;
+    id: string;
+    name: string;
+    email: string;
+}
+
+
+interface CardData {
+    fullName: string;
+    amount: string;
+    giftCode: string;
+    expirationDate: string;
 }
 
 
@@ -60,9 +74,28 @@ export default function BookingDetailPage() {
     const [newNote, setNewNote] = useState("");
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
     const [editingNoteText, setEditingNoteText] = useState("");
+    const [templateType, setTemplateType] = useState("");
 
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [url, setUrl] = useState<string>(""); // single URL
+
+    const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+    const [cardData, setCardData] = useState<CardData | null>(null);
+
+    console.log("cardData =>:", cardData)
+    const handleGenerateCard = (newCardData: CardData) => {
+        setCardData(newCardData);
+        // Here you can also generate your email template
+        handleSend("Voucher")
+    };
+
+    const handleAddUrl = (newUrl: string) => {
+        setUrl(newUrl); // store only one URL
+        setModalOpen(false);
+        handleSend("General")
+    };
 
     const handleDeleteClick = (note: Note) => {
         setSelectedNote(note);
@@ -135,71 +168,55 @@ export default function BookingDetailPage() {
             })
             .catch((err) => toast.error(err));
     };
-    const getEmailTemplate = (status: string, emailData: BookingTemplateData) => {
+
+    const getEmailTemplate = (status: string, emailData: BookingTemplateData & { refundAmount?: string; processingFee?: string }) => {
         switch (status) {
             case "MODIFIED":
                 return bookingModificationTemplate(emailData);
             case "CANCELLED":
-                // You would implement a cancellation template here
-                return {
-                    subject: `${emailData.rentalCompany} Booking Cancellation #${emailData.confirmationNumber}`,
-                    html: `<div style="padding: 20px; text-align: center;">
-            <h2>Cancellation Email Template</h2>
-            <p>This would be the cancellation email content for ${emailData.fullName}</p>
-          </div>`
-                };
+                return cancellationTemplate(emailData);
             case "BOOKED":
+                return bookingTemplate(emailData);
+            case "REFUND":
+                return refundTemplate(emailData); // <-- added refund case
+            case "VOUCHER":
+                return giftCardTemplate(emailData); // <-- added refund case
             default:
                 return bookingTemplate(emailData);
         }
     };
 
-    // 3. Update the handleSend function to open the modal
     const handleSend = async (type: string) => {
         if (!booking) return;
 
-        // Get the last timeline entry (most recent modification)
+        // ✅ Get latest timeline + modification fee
         const lastTimelineEntry = booking.timeline?.[booking.timeline.length - 1];
-        const lastTimeModificationFee = booking.modificationFee?.[booking.modificationFee.length - 1] || {}
-        const modificationMCO = lastTimeModificationFee?.charge || ""
+        const lastTimeModificationFee = booking.modificationFee?.[booking.modificationFee.length - 1] || {};
+        const modificationMCO = lastTimeModificationFee?.charge || "";
 
-        // Extract changes from timeline or create empty array
+        // ✅ Extract changes
         const changes = lastTimelineEntry?.changes || [];
-
-        // Transform changes to match the expected format
         const formattedChanges: FormattedBookingChange[] = changes.map(change => {
-            // Parse the text to extract field, oldValue, and newValue
             const match = change.text.match(/(.*?) updated from "(.*?)" to "(.*?)"/);
-
             if (match) {
                 return {
                     field: match[1],
                     oldValue: match[2],
-                    newValue: match[3]
+                    newValue: match[3],
                 };
             }
 
-            // For other formats like "Modification fee added: $55"
             const feeMatch = change.text.match(/(.*?): (.*)/);
             if (feeMatch) {
                 return {
                     field: feeMatch[1],
                     oldValue: null,
-                    newValue: feeMatch[2]
+                    newValue: feeMatch[2],
                 };
             }
 
-            // Fallback - just use the text as the field
-            return {
-                field: change.text,
-                oldValue: null,
-                newValue: null
-            };
+            return { field: change.text, oldValue: null, newValue: null };
         });
-
-        // Log changes for debugging
-        console.log("Original changes:", changes);
-        console.log("Formatted changes:", formattedChanges);
 
         const emailData: BookingTemplateData = {
             fullName: booking.fullName,
@@ -222,26 +239,68 @@ export default function BookingDetailPage() {
             billingAddress: booking.billingAddress,
             salesAgent: booking.salesAgent,
             changes: formattedChanges,
-            modificationMCO: modificationMCO
+            modificationMCO: modificationMCO,
+            paymentLink: url,
         };
 
         try {
             switch (type) {
-                case "General":
+                case "General": {
                     const template = getEmailTemplate(booking.status, emailData);
                     setEmailSubject(template.subject);
                     setEmailPreviewHtml(template.html);
                     setIsModalOpen(true);
+                    setTemplateType(booking.status);
                     break;
-                case "Voucher":
-                    toast.error("Voucher template is not yet implemented.");
+                }
+
+                case "Refund": {
+                    if (!booking.refundAmount || !booking.mco) {
+                        toast.error("Refund data is missing.");
+                        return;
+                    }
+
+                    const refundEmailData = {
+                        ...emailData,
+                        refundAmount: booking.refundAmount,
+                        processingFee: booking.mco,
+                    };
+
+                    const refundTemplateData = getEmailTemplate("REFUND", refundEmailData);
+                    if (!refundTemplateData) return;
+
+                    setEmailSubject(refundTemplateData.subject);
+                    setEmailPreviewHtml(refundTemplateData.html);
+                    setIsModalOpen(true);
+                    setTemplateType("REFUND");
                     break;
-                case "Payment Link":
-                    toast.error("Payment Link template is not yet implemented.");
+                }
+
+                case "Voucher": {
+                    if (!cardData?.amount || !cardData?.giftCode || !cardData?.expirationDate) {
+                        toast.error("Voucher card data is missing.");
+                        return;
+                    }
+
+                    const voucherEmailData: GiftCardTemplateData = {
+                        ...emailData,
+                        amount: cardData?.amount || "",
+                        giftCode: cardData?.giftCode || "",
+                        expirationDate: cardData?.expirationDate || "",
+                        fullName: cardData?.fullName || "",
+                    };
+
+                    const voucherTemplateData = getEmailTemplate("VOUCHER", voucherEmailData);
+
+                    if (!voucherTemplateData) return;
+
+                    setEmailSubject(voucherTemplateData.subject);
+                    setEmailPreviewHtml(voucherTemplateData.html);
+                    setIsModalOpen(true);
+                    setTemplateType("Voucher");
                     break;
-                case "Refund":
-                    toast.error("Refund template is not yet implemented.");
-                    break;
+                }
+
                 default:
                     toast.error(`Email template for "${type}" is not yet implemented.`);
             }
@@ -367,16 +426,16 @@ export default function BookingDetailPage() {
                                     <FiSend className="mr-2" /> Preview Email
                                 </button>
                                 <button
-                                    onClick={() => handleSend("Voucher")}
-                                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition shadow-md"
-                                >
-                                    <FiGift className="mr-2" /> Voucher & Gift Card
-                                </button>
-                                <button
-                                    onClick={() => handleSend("Payment Link")}
+                                    onClick={() => setModalOpen(true)}
                                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow-md"
                                 >
                                     <FiLink className="mr-2" /> Payment Link
+                                </button>
+                                <button
+                                    onClick={() => setIsGiftModalOpen(true)}
+                                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition shadow-md"
+                                >
+                                    <FiGift className="mr-2" /> Voucher & Gift Card
                                 </button>
                                 <button
                                     onClick={() => handleSend("Refund")}
@@ -429,6 +488,15 @@ export default function BookingDetailPage() {
                                                 <FiPhone className="mr-3 text-gray-500" />
                                                 <span className="text-sm">{booking.phoneNumber}</span>
                                             </div>
+                                            {
+                                                booking?.dateOfBirth && (
+                                                    <div className="flex items-center text-gray-600 p-2 bg-gray-50 rounded-lg">
+                                                        <FaRegCalendarAlt className="mr-3 text-gray-500" />
+                                                        <span className="text-sm">{booking?.dateOfBirth}</span>
+                                                    </div>
+                                                )
+                                            }
+
                                         </div>
                                     </div>
                                 )}
@@ -890,7 +958,7 @@ export default function BookingDetailPage() {
                             onSubmit={handleEmailSubmit}
                             isSubmitting={isSendingEmail}
                             title={emailSubject || "Email Preview"}
-                            status={booking.status}
+                            status={templateType as "BOOKED" | "MODIFIED" | "CANCELLED" | "REFUND"}
                         >
                             <iframe
                                 srcDoc={emailPreviewHtml}
@@ -915,6 +983,28 @@ export default function BookingDetailPage() {
             }
 
 
+            {
+
+                modalOpen && (
+                    < UrlInputModal
+                        isOpen={modalOpen}
+                        onClose={() => setModalOpen(false)}
+                        onAdd={handleAddUrl}
+                    />
+                )
+            }
+
+
+            {
+                isGiftModalOpen && (
+                    < GiftCardModal
+                        isOpen={isGiftModalOpen}
+                        onClose={() => setIsGiftModalOpen(false)}
+                        onGenerate={handleGenerateCard}
+                        initialCustomerName={booking?.fullName || 'JOHN DOE'}
+                    />
+                )
+            }
 
         </>
 

@@ -32,7 +32,8 @@ export interface BookingTemplateData {
   salesAgent?: string;
   confirmationNumber?: string;
   changes?: FormattedBookingChange[];
-  modificationMCO?: string
+  modificationMCO?: string;
+  paymentLink?: string; // ✅ New field
 }
 
 export const bookingModificationTemplate = (data: BookingTemplateData) => {
@@ -152,6 +153,22 @@ ${data.changes && data.changes.length > 0 ? `
                       <tr>
                         <td style="padding:2px 0 4px 0;"><strong>Modification Fee:</strong> $${data.modificationMCO}</td>
                       </tr>
+                         <tr>
+                        <td style="padding:2px 0 4px 0;">
+                           ${data.paymentLink ? `
+  <div style="text-align:center;margin:20px 0;">
+    <a href="${data.paymentLink}" 
+       style="display:inline-block;padding:12px 20px;
+              background-color:#4f46e5;color:#ffffff;
+              font-size:14px;font-weight:bold;
+              text-decoration:none;border-radius:6px;">
+      🔒 Create Secure Payment
+    </a>
+  </div>
+` : ""}
+                        </td>
+                           
+                      </tr>
                     </table>
                   </div>
                 </div>
@@ -208,7 +225,7 @@ ${data.changes && data.changes.length > 0 ? `
                   <!-- Signature / Consent -->
                 <p style="margin:14px 0 0;font-size:13px;line-height:1.7;color:#4b5563;">
                   I, ${data.fullName}, read the terms &amp; conditions and understand that the price is <strong>non-refundable</strong>.
-                  I agree to pay the total amount mentioned above for this purchase. I understand this serves as my legal signature.
+                  I agree to pay the Modification Fee as mentioned above for this Modification. I understand this serves as my legal signature.
                   For any queries, call <a href="tel:+18556133131" style="color:#4f46e5;text-decoration:none;">+1 (855) 613-3131</a>.
                 </p>
 

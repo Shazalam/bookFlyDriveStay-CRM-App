@@ -1,3 +1,72 @@
+// "use client";
+
+// import React from "react";
+
+// interface InputFieldProps {
+//   label: string;
+//   name: string;
+//   type?: string;
+//   value: string | number;
+//   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+//   placeholder?: string;
+//   required?: boolean;
+//   maxLength?: number;
+//   min?: string;      // optional
+//   step?: string;     // optional
+//   disabled?: boolean;
+//   readOnly?: boolean;
+//   className?: string
+// }
+
+// export default function InputField({
+//   label,
+//   name,
+//   type = "text",
+//   value,
+//   onChange,
+//   placeholder,
+//   required = false,
+//   maxLength,
+//   min,
+//   step,
+//   disabled = false,
+//   readOnly = false,     // ✅ added here
+//   className = ""
+// }: InputFieldProps) {
+//   return (
+//     <div>
+//       <label
+//         htmlFor={name}
+//         className="block text-sm font-medium text-gray-700 mb-1"
+//       >
+//         {label}
+//       </label>
+
+//       <input
+//         id={name}
+//         type={type}
+//         name={name}
+//         value={value}
+//         onChange={onChange}
+//         placeholder={placeholder}
+//         maxLength={maxLength}
+//         required={required}
+//         min={min}
+//         step={step}
+//         disabled={disabled}
+//         readOnly={readOnly}   // ✅ now works
+//         className={className || `w-full border border-gray-300 rounded-lg p-3 text-gray-900 placeholder-gray-400 
+//           focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition 
+//           hover:border-indigo-400
+//           ${disabled || readOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"}
+//         `}
+//       />
+//     </div>
+//   );
+// }
+
+
+
 "use client";
 
 import React from "react";
@@ -11,11 +80,11 @@ interface InputFieldProps {
   placeholder?: string;
   required?: boolean;
   maxLength?: number;
-  min?: string;      // optional
-  step?: string;     // optional
+  min?: string;
+  step?: string;
   disabled?: boolean;
   readOnly?: boolean;
-  className?: string
+  className?: string;
 }
 
 export default function InputField({
@@ -30,8 +99,8 @@ export default function InputField({
   min,
   step,
   disabled = false,
-  readOnly = false,     // ✅ added here
-  className = ""
+  readOnly = false,
+  className = "",
 }: InputFieldProps) {
   return (
     <div>
@@ -54,12 +123,13 @@ export default function InputField({
         min={min}
         step={step}
         disabled={disabled}
-        readOnly={readOnly}   // ✅ now works
-        className={className || `w-full border border-gray-300 rounded-lg p-3 text-gray-900 placeholder-gray-400 
+        readOnly={readOnly}
+        className={`w-full border border-gray-300 rounded-lg p-3 
+          text-gray-900 placeholder-gray-400 
           focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition 
           hover:border-indigo-400
           ${disabled || readOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"}
-        `}
+          ${className}`}
       />
     </div>
   );

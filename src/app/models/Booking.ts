@@ -19,6 +19,7 @@ export interface IBooking extends Document {
   vehicleImage?: string;
   total?: string;
   mco?: string;
+  refundAmount?: string;
   payableAtPickup?: string;
   pickupDate: string;
   dropoffDate: string;
@@ -61,6 +62,7 @@ const BookingSchema = new Schema<IBooking>(
     total: { type: String, default: "0.00" },
     mco: { type: String, default: "0.00" },
     payableAtPickup: { type: String, default: "0.00" },
+    refundAmount: { type: String, default: "0.00" },
     pickupDate: { type: String },
     dropoffDate: { type: String },
     pickupTime: { type: String },

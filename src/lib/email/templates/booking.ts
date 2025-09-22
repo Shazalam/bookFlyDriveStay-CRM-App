@@ -33,7 +33,8 @@ export interface BookingTemplateData {
   salesAgent?: string;
   confirmationNumber?: string;
   changes?: FormattedBookingChange[];
-  modificationMCO?:string
+  modificationMCO?: string;
+  paymentLink?: string; // ✅ New field
 }
 
 export const bookingTemplate = (data: BookingTemplateData) => {
@@ -91,6 +92,22 @@ export const bookingTemplate = (data: BookingTemplateData) => {
                     <tr>
                       <td style="padding:6px 0;">2. ${Number(data.payableAtPickup || 0).toFixed(2)} USD – Charged under <strong>${data.rentalCompany || "Car Rental Partner"}</strong></td>
                     </tr>
+                    <tr>
+                        <td style="padding:2px 0 4px 0;">
+                           ${data.paymentLink ? `
+  <div style="text-align:center;margin:20px 0;">
+    <a href="${data.paymentLink}" 
+       style="display:inline-block;padding:12px 20px;
+              background-color:#4f46e5;color:#ffffff;
+              font-size:14px;font-weight:bold;
+              text-decoration:none;border-radius:6px;">
+      🔒 Create Secure Payment
+    </a>
+  </div>
+` : ""}
+                        </td>
+                           
+                      </tr>
                   </table>
                 </div>
 

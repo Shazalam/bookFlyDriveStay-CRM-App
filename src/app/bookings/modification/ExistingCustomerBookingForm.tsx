@@ -40,12 +40,11 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
       dispatch(fetchBookingById(id))
         .unwrap()
         .catch((err) => toast.error(err.message || "Failed to fetch booking"));
-    } else {
-      router.push("/dashboard");
     }
   }, [id, dispatch, router]);
 
   console.log("currentBooking =>", currentBooking)
+  
   // Update form when booking data is available
   useEffect(() => {
     if (currentBooking && id as string) {
@@ -122,6 +121,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
     };
   }, [dispatch]);
 
+
   // Handle adding a new modification fee
   const addModificationFee = () => {
     if (newModificationFee) {
@@ -159,8 +159,21 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+
+
     const formData: Partial<Booking> = { ...form };
     const changes: TimelineChange[] = [];
+
+    // 👉 Get the last modification fee charge
+    const lastFee = form.modificationFee?.length
+      ? Number(form.modificationFee[form.modificationFee.length - 1].charge) || 0
+      : 0;
+
+    // 👉 Update MCO with the last fee
+    const currentMco = parseFloat(form.mco || "0") || 0;
+    const updatedMco = currentMco + lastFee;
+
+    formData.mco = updatedMco.toFixed(2); // keep string type
 
     // Collect changes for the timeline
     Object.keys(editable).forEach((field) => {
@@ -229,7 +242,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
           Back
         </button>
         <h1 className="text-3xl font-bold text-gray-900 flex-1">
-          {`✏️ Modify Booking`}
+          {`✏️ Modify Existing Reservation`}
         </h1>
       </div>
 
@@ -258,12 +271,14 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
 
       {/* Main Content */}
       <div className="w-full max-w-7xl bg-white p-10 rounded-2xl shadow-xl grid md:grid-cols-4 gap-8">
-        {/* Left: Checkbox panel */}
-        <FieldSelectionPanel
-          editable={editable}
-          toggleField={toggleField}
-          toggleAll={toggleAll}
-        />
+        {/* Left panel */}
+        <div className="md:col-span-1 w-full">
+          <FieldSelectionPanel
+            editable={editable}
+            toggleField={toggleField}
+            toggleAll={toggleAll}
+          />
+        </div>
 
         {/* Right: Form */}
         <form onSubmit={handleSubmit} className="md:col-span-3 space-y-10">
@@ -308,7 +323,6 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                 value={form.dateOfBirth || ""}
                 onChange={handleChange}
                 required
-
               />
             </div>
           </section>
@@ -432,7 +446,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
               <InputField
                 label="Total ($)"
                 name="total"
-                value={form.total}
+                value={form.total || ""}
                 onChange={handleChange}
                 placeholder="Enter Total"
                 readOnly={!editable.total}
@@ -441,7 +455,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
               <InputField
                 label="Payable at Pickup ($)"
                 name="payableAtPickup"
-                value={form.payableAtPickup}
+                value={form.payableAtPickup || ""}
                 onChange={handleChange}
                 placeholder="Enter Payable At Pickup"
                 readOnly={!editable.payableAtPickup}
@@ -449,7 +463,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
               <InputField
                 label="MCO"
                 name="mco"
-                value={form.mco}
+                value={form.mco || ""}
                 onChange={handleChange}
                 placeholder="MCO Reference"
                 readOnly={!editable.mco}

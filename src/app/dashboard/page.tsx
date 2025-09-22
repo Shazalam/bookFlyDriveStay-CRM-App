@@ -313,7 +313,7 @@ export default function DashboardPage() {
                     { key: 'createdAt', label: 'Date' },
                     { key: 'fullName', label: 'Customer' },
                     { key: 'rentalCompany', label: 'Company' },
-                    { key: 'total', label: 'Total' },
+                    { key: 'mco', label: 'MCO' },
                     { key: 'pickupDate', label: 'Pickup Date' },
                   ].map(({ key, label }) => (
                     <th
@@ -334,9 +334,9 @@ export default function DashboardPage() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {/* <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Details
-                  </th>
+                  </th> */}
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Edit
                   </th>
@@ -440,7 +440,6 @@ function BookingRow({
   booking,
   expanded,
   onExpand,
-  onCancel,
   getStatusIcon,
   getStatusColor
 }: BookingRowProps) {
@@ -475,7 +474,7 @@ function BookingRow({
           <div className="text-sm text-gray-900">{booking.rentalCompany}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm font-medium text-gray-900">${Number(booking.total).toFixed(2)}</div>
+          <div className="text-sm font-medium text-gray-900">${Number(booking.mco).toFixed(2)}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="text-sm text-gray-900">{new Date(booking.pickupDate).toLocaleDateString()}</div>
@@ -486,7 +485,7 @@ function BookingRow({
             {booking.status}
           </span>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex items-center gap-2">
             <Link
               href={`/bookings/${booking._id}/view`}
@@ -495,7 +494,7 @@ function BookingRow({
               View Details
             </Link>
           </div>
-        </td>
+        </td> */}
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex items-center gap-2">
             {/* Existing Customer */}
@@ -564,7 +563,7 @@ function BookingRow({
                   Rental Details
                 </h4>
                 <div className="text-sm">
-                  <div className="text-gray-600">MCO: ${Number(booking.mco)}</div>
+                  <div className="text-gray-600">Total: ${Number(booking.total)}</div>
                   <div className="text-gray-600">Payable at Pickup: ${Number(booking.payableAtPickup).toFixed(2)}</div>
                 </div>
               </div>
@@ -619,14 +618,14 @@ function BookingRow({
               >
                 View Full Details
               </Link>
+
               {booking.status !== "CANCELLED" && (
-                <button
-                  onClick={() => onCancel(booking._id)}
-                  className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition"
+                <Link
+                  href={`/bookings/cancellation?id=${booking._id}`}
+                  className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-70 text-white text-sm font-medium rounded-md transition"
                 >
                   Cancel Booking
-                </button>
-              )}
+                </Link>)}
             </div>
           </td>
         </tr>
