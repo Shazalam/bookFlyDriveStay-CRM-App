@@ -10,11 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import TimePicker from "@/components/TimePicker";
 import LoadingScreen from "@/components/LoadingScreen";
 
-const rentalCompanies = [
-    "Hertz", "Avis", "Sixt", "Budget", "Enterprise",
-    "Alamo", "National", "Thrifty", "Dollar",
-    "Europcar", "Fox Rent A Car", "Payless", "Zipcar", "Other",
-];
+import {  rentalCompanies } from "@/types/booking";
 
 export default function NewBookingPage() {
     const router = useRouter();
@@ -134,7 +130,7 @@ export default function NewBookingPage() {
                 expiration: booking.expiration || "",
                 billingAddress: booking.billingAddress || "",
                 salesAgent: booking.salesAgent || "",
-                status:booking?.status ||  "BOOKED"
+                status: booking?.status || "BOOKED"
             });
         } catch (error) {
             console.error("Error fetching booking:", error);
@@ -206,7 +202,7 @@ export default function NewBookingPage() {
                     </button>
 
                     <h1 className="text-3xl font-bold text-gray-900 text-center md:text-left flex-1">
-                        {isEditing ? "✏️ Edit Booking" : "✈️ Create New Booking"}
+                        {isEditing ? "✏️ Edit Existing Reservation" : "✈️ Create New Reservation"}
                     </h1>
                 </div>
 
@@ -326,15 +322,25 @@ export default function NewBookingPage() {
                                 required
                             />
 
+                            {/* Pickup Date */}
                             <InputField
                                 label="Pickup Date"
                                 name="pickupDate"
                                 type="date"
                                 value={form.pickupDate}
-                                onChange={handleChange}
-                                min={isPastBooking ? undefined : new Date().toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    const todayStr = new Date().toISOString().split("T")[0];
+
+                                    // Auto-correct if past date is typed
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        pickupDate: value < todayStr ? todayStr : value,
+                                    }));
+                                }}
+                                min={new Date().toISOString().split("T")[0]} // disables past dates in picker
                                 required
-                                readOnly={isPastBooking}
+                                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition hover:border-indigo-400"
                             />
 
                             <TimePicker
@@ -354,15 +360,27 @@ export default function NewBookingPage() {
                                 required
                             />
 
+                            {/* Drop-off Date */}
                             <InputField
                                 label="Drop-off Date"
                                 name="dropoffDate"
                                 type="date"
                                 value={form.dropoffDate}
-                                onChange={handleChange}
-                                min={form.pickupDate || (isPastBooking ? undefined : new Date().toISOString().split('T')[0])}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    const todayStr = new Date().toISOString().split("T")[0];
+
+                                    // Auto-correct if past date is typed
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        dropoffDate: value < todayStr ? todayStr : value,
+                                    }));
+                                }}
+                                min={new Date().toISOString().split("T")[0]} // disables past dates in picker
                                 required
+                                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition hover:border-indigo-400"
                             />
+
 
                             <TimePicker
                                 label="Drop-off Time"

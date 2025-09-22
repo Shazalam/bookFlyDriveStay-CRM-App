@@ -1,6 +1,7 @@
 // components/Navbar.tsx
 "use client";
 
+import { User } from "@/app/store/slices/authSlice";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,12 +17,9 @@ import {
 } from "react-icons/fi";
 import { IoCarSport } from "react-icons/io5"; // 🚗 car icon for branding
 
+
 interface NavbarProps {
-  user?: {
-    name: string;
-    email: string;
-    avatar?: string;
-  };
+  user?: User;   // 👈 reuse your slice type
   onLogout?: () => void;
 }
 
@@ -67,10 +65,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               <span className="hidden sm:inline">Modification</span>
             </Link>
 
-
             {/* Cancellation Button */}
             <Link
-              href="/bookings/cancel"
+              href="/bookings/cancellation"
               className="bg-gradient-to-r from-red-500 to-rose-600 text-white px-3 py-2.5 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-1.5 text-sm hover:scale-105"
             >
               <FiXCircle className="w-3.5 h-3.5" />

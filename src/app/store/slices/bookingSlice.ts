@@ -11,6 +11,7 @@ export interface Booking {
   vehicleImage?: string;
   total?: string;
   mco?: string;
+  refundAmount?: string,
   payableAtPickup?: string;
   pickupDate: string;
   dropoffDate: string;
@@ -47,7 +48,7 @@ export interface Booking {
 interface BookingState {
   currentBooking: Booking | null;
   loading: boolean;
-  actionLoading:boolean;
+  actionLoading: boolean;
   error: string | null;
   operation: "idle" | "pending" | "succeeded" | "failed";
 }
@@ -55,7 +56,7 @@ interface BookingState {
 const initialState: BookingState = {
   currentBooking: null,
   loading: false,
-  actionLoading:false,
+  actionLoading: false,
   error: null,
   operation: "idle",
 };

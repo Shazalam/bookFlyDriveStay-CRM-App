@@ -281,14 +281,19 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
           <ArrowLeft size={18} />
           Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-900 flex-1">🆕 New Customer Booking</h1>
+        <h1 className="text-3xl font-bold text-gray-900 flex-1">🆕 New Modification Reservation</h1>
       </div>
 
       {/* Main content */}
       <div className="w-full max-w-7xl bg-white p-10 rounded-2xl shadow-xl grid md:grid-cols-4 gap-8">
         {/* Left panel */}
-        <FieldSelectionPanel editable={editable} toggleField={toggleField} toggleAll={toggleAll} />
-
+        <div className="md:col-span-1 w-full">
+          <FieldSelectionPanel
+            editable={editable}
+            toggleField={toggleField}
+            toggleAll={toggleAll}
+          />
+        </div>
         {/* Right: form */}
         <form onSubmit={handleSubmit} className="md:col-span-3 space-y-10">
           {/* Customer Info */}
@@ -361,7 +366,7 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
                       value={newModificationFee}
                       onChange={(e) => setNewModificationFee(e.target.value)}
                       placeholder="Enter fee (e.g., 25.00)"
-                      className="flex-1 border border-gray-300 rounded-lg p-3 bg-white"
+                      className="flex-1 border border-gray-300 rounded-lg p-3 bg-white  text-gray-800"
                     />
                     <button
                       type="button"

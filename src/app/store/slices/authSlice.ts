@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import toast from 'react-hot-toast';
 
-interface User {
+export interface User {
   name: string;
   email: string;
   avatar?: string;
@@ -131,11 +131,14 @@ const authSlice = createSlice({
       })
 
       // 🧠 Current User
+      .addCase(fetchCurrentUser.pending, (s) => {
+        s.loading = true; s.error = null;
+      })
       .addCase(fetchCurrentUser.fulfilled, (s, a: PayloadAction<User>) => {
-        s.user = a.payload; s.success = true;
+        s.user = a.payload; s.success = true; s.loading = false;
       })
       .addCase(fetchCurrentUser.rejected, (s) => {
-        s.user = null; s.success = false;
+        s.user = null; s.success = false;    s.loading = false;
       })
 
       // 🚪 Logout
