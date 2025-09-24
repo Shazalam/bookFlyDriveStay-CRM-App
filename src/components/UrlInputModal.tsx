@@ -11,7 +11,7 @@ const UrlInputModal: React.FC<UrlInputModalProps> = ({
   isOpen, 
   onClose, 
   onAdd, 
-  title = "Add Payment URL" 
+  title = "Add Payment URL" ,
 }) => {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
