@@ -466,7 +466,12 @@ function BookingRow({
             </div>
             <div className="ml-4">
               <div className="text-sm font-medium text-gray-900">{booking.fullName}</div>
-              <div className="text-sm text-gray-500">{booking.email}</div>
+              <div className="text-sm text-gray-500">
+                {(() => {
+                  const [localPart, domain] = booking.email.split('@');
+                  return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
+                })()}
+              </div>
             </div>
           </div>
         </td>
@@ -552,8 +557,15 @@ function BookingRow({
                   Customer Details
                 </h4>
                 <div className="text-sm">
-                  <div className="text-gray-600">Phone: {booking.phoneNumber}</div>
-                  <div className="text-gray-600">Email: {booking.email}</div>
+                  <div className="text-gray-600">
+                    Phone: ******{booking.phoneNumber.slice(-4)}
+                  </div>
+                  <div className="text-gray-600">
+                    Email: {(() => {
+                      const [localPart, domain] = booking.email.split('@');
+                      return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
+                    })()}
+                  </div>
                 </div>
               </div>
 

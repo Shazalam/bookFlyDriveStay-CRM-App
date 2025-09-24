@@ -84,7 +84,6 @@ export default function BookingDetailPage() {
     const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
     const [cardData, setCardData] = useState<CardData | null>(null);
 
-    console.log("cardData =>:", cardData)
     const handleGenerateCard = (newCardData: CardData) => {
         setCardData(newCardData);
         // Here you can also generate your email template
@@ -94,8 +93,9 @@ export default function BookingDetailPage() {
     const handleAddUrl = (newUrl: string) => {
         setUrl(newUrl); // store only one URL
         setModalOpen(false);
-        handleSend("General")
+        handleSend("General", newUrl); // now handleSend can use `url` (be mindful of closure; see note)
     };
+
 
     const handleDeleteClick = (note: Note) => {
         setSelectedNote(note);
@@ -128,7 +128,6 @@ export default function BookingDetailPage() {
         async function fetchUser() {
             const res = await fetch("/api/auth/me", { credentials: "include" });
             const data = await res.json();
-            console.log("agent =>", data)
             if (data.user) {
                 setAgent(data?.user)
             }
@@ -186,8 +185,11 @@ export default function BookingDetailPage() {
         }
     };
 
-    const handleSend = async (type: string) => {
+    const handleSend = async (type: string, overrideUrl?: string) => {
         if (!booking) return;
+
+        // ✅ Get latest URL - use override if provided, otherwise use state
+        const currentUrl = overrideUrl || url;
 
         // ✅ Get latest timeline + modification fee
         const lastTimelineEntry = booking.timeline?.[booking.timeline.length - 1];
@@ -240,7 +242,7 @@ export default function BookingDetailPage() {
             salesAgent: booking.salesAgent,
             changes: formattedChanges,
             modificationMCO: modificationMCO,
-            paymentLink: url,
+            paymentLink: currentUrl, // Use the current URL
         };
 
         try {
@@ -255,6 +257,7 @@ export default function BookingDetailPage() {
                 }
 
                 case "Refund": {
+                    console.log("cardData =>:", cardData)
                     if (!booking.refundAmount || !booking.mco) {
                         toast.error("Refund data is missing.");
                         return;
@@ -281,6 +284,7 @@ export default function BookingDetailPage() {
                         toast.error("Voucher card data is missing.");
                         return;
                     }
+
 
                     const voucherEmailData: GiftCardTemplateData = {
                         ...emailData,
@@ -482,11 +486,15 @@ export default function BookingDetailPage() {
                                         <div className="space-y-3">
                                             <div className="flex items-center text-gray-600 p-2 bg-gray-50 rounded-lg">
                                                 <FiMail className="mr-3 text-gray-500" />
-                                                <span className="text-sm">{booking.email}</span>
+                                                <span className="text-sm">{(() => {
+                                                    const [localPart, domain] = booking.email.split('@');
+                                                    return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
+                                                })()}
+                                                </span>
                                             </div>
                                             <div className="flex items-center text-gray-600 p-2 bg-gray-50 rounded-lg">
                                                 <FiPhone className="mr-3 text-gray-500" />
-                                                <span className="text-sm">{booking.phoneNumber}</span>
+                                                <span className="text-sm"> ******{booking.phoneNumber.slice(-4)}</span>
                                             </div>
                                             {
                                                 booking?.dateOfBirth && (
@@ -981,7 +989,6 @@ export default function BookingDetailPage() {
                     />
                 )
             }
-
 
             {
 
