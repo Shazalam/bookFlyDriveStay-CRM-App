@@ -84,11 +84,26 @@ export default function BookingDetailPage() {
     const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
     const [cardData, setCardData] = useState<CardData | null>(null);
 
-    const handleGenerateCard = (newCardData: CardData) => {
-        setCardData(newCardData);
-        // Here you can also generate your email template
-        handleSend("Voucher")
+    // Separate handler for voucher emails
+    const handleVoucherSend = (voucherData: CardData) => {
+        if (!booking) return;
+
+        setCardData(voucherData); // Store for future use
+
+        if (!voucherData?.amount || !voucherData?.giftCode || !voucherData?.expirationDate) {
+            toast.error("Voucher card data is missing.");
+            return;
+        }
+
+        // ... rest of your voucher email logic
+        handleSend("Voucher", undefined, voucherData); // pass cardData directly as third parameter
     };
+
+    // Then update your handleGenerateCard:
+    const handleGenerateCard = (newCardData: CardData) => {
+        handleVoucherSend(newCardData); // Call the dedicated handler
+    };
+
 
     const handleAddUrl = (newUrl: string) => {
         setUrl(newUrl); // store only one URL
@@ -185,11 +200,14 @@ export default function BookingDetailPage() {
         }
     };
 
-    const handleSend = async (type: string, overrideUrl?: string) => {
+    const handleSend = async (type: string, overrideUrl?: string, overrideCardData?: CardData) => {
         if (!booking) return;
 
         // ✅ Get latest URL - use override if provided, otherwise use state
         const currentUrl = overrideUrl || url;
+
+        // ✅ Get latest card data - use override if provided, otherwise use state
+        const currentCardData = overrideCardData || cardData;
 
         // ✅ Get latest timeline + modification fee
         const lastTimelineEntry = booking.timeline?.[booking.timeline.length - 1];
@@ -257,7 +275,6 @@ export default function BookingDetailPage() {
                 }
 
                 case "Refund": {
-                    console.log("cardData =>:", cardData)
                     if (!booking.refundAmount || !booking.mco) {
                         toast.error("Refund data is missing.");
                         return;
@@ -280,18 +297,17 @@ export default function BookingDetailPage() {
                 }
 
                 case "Voucher": {
-                    if (!cardData?.amount || !cardData?.giftCode || !cardData?.expirationDate) {
+                    if (!currentCardData?.amount || !currentCardData?.giftCode || !currentCardData?.expirationDate) {
                         toast.error("Voucher card data is missing.");
                         return;
                     }
 
-
                     const voucherEmailData: GiftCardTemplateData = {
                         ...emailData,
-                        amount: cardData?.amount || "",
-                        giftCode: cardData?.giftCode || "",
-                        expirationDate: cardData?.expirationDate || "",
-                        fullName: cardData?.fullName || "",
+                        amount: currentCardData?.amount || "",
+                        giftCode: currentCardData?.giftCode || "",
+                        expirationDate: currentCardData?.expirationDate || "",
+                        fullName: currentCardData?.fullName || "",
                     };
 
                     const voucherTemplateData = getEmailTemplate("VOUCHER", voucherEmailData);
@@ -301,7 +317,7 @@ export default function BookingDetailPage() {
                     setEmailSubject(voucherTemplateData.subject);
                     setEmailPreviewHtml(voucherTemplateData.html);
                     setIsModalOpen(true);
-                    setTemplateType("Voucher");
+                    setTemplateType("VOUCHER");
                     break;
                 }
 
@@ -966,7 +982,7 @@ export default function BookingDetailPage() {
                             onSubmit={handleEmailSubmit}
                             isSubmitting={isSendingEmail}
                             title={emailSubject || "Email Preview"}
-                            status={templateType as "BOOKED" | "MODIFIED" | "CANCELLED" | "REFUND"}
+                            status={templateType as "BOOKED" | "MODIFIED" | "CANCELLED" | "REFUND" | "VOUCHER"}
                         >
                             <iframe
                                 srcDoc={emailPreviewHtml}
