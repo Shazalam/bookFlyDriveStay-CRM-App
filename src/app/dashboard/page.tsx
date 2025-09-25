@@ -21,6 +21,8 @@ import { IoCarSport } from "react-icons/io5";
 import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
 import ConfirmCancelModal from "@/components/ConfirmCancelModal";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { fetchBookings } from "../store/slices/bookingSlice";
 
 interface Booking {
   _id: string;
@@ -49,6 +51,8 @@ type SortableField = keyof Booking;
 type SortDirection = "ascending" | "descending";
 
 export default function DashboardPage() {
+  const dispatch = useAppDispatch()
+  const { bookingsList, listLoading, error } = useAppSelector(state => state.booking);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<BookingStatus>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
@@ -64,31 +68,36 @@ export default function DashboardPage() {
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
 
   // Fetch bookings from API
+  // useEffect(() => {
+  //   async function fetchBookings() {
+  //     try {
+  //       setLoading(true);
+  //       const res = await fetch("/api/bookings", {
+  //         method: "GET",
+  //         credentials: "include",
+  //       });
+
+  //       if (!res.ok) {
+  //         throw new Error("Failed to fetch bookings");
+  //       }
+
+  //       const data = await res.json();
+  //       setBookings(data.bookings || []);
+  //     } catch (err: unknown) {
+  //       const message = err instanceof Error ? err.message : "Error loading bookings";
+  //       toast.error(message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
+
+  //   fetchBookings();
+  // }, []);
+
+
   useEffect(() => {
-    async function fetchBookings() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/bookings", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch bookings");
-        }
-
-        const data = await res.json();
-        setBookings(data.bookings || []);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Error loading bookings";
-        toast.error(message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchBookings();
-  }, []);
+    dispatch(fetchBookings());
+  }, [dispatch]);
 
   const cancelBooking = useCallback(async (id: string) => {
     try {
@@ -126,9 +135,9 @@ export default function DashboardPage() {
   }, [sortConfig]);
 
   const sortedBookings = useMemo(() => {
-    if (!sortConfig) return bookings;
+    if (!sortConfig) return bookingsList;
 
-    return [...bookings].sort((a, b) => {
+    return [...bookingsList].sort((a, b) => {
       const { key, direction } = sortConfig;
       const aValue = a[key];
       const bValue = b[key];
@@ -169,7 +178,7 @@ export default function DashboardPage() {
 
       return 0;
     });
-  }, [bookings, sortConfig]);
+  }, [bookingsList, sortConfig]);
 
   // ✅ Filtering logic (with ALL tab)
   const filteredBookings = useMemo(() => {
@@ -220,12 +229,12 @@ export default function DashboardPage() {
   // Tab counts
   const statusCounts = useMemo(
     () => ({
-      ALL: bookings.length,
-      BOOKED: bookings.filter((b) => b.status === "BOOKED").length,
-      MODIFIED: bookings.filter((b) => b.status === "MODIFIED").length,
-      CANCELLED: bookings.filter((b) => b.status === "CANCELLED").length,
+      ALL: bookingsList.length,
+      BOOKED: bookingsList.filter((b) => b.status === "BOOKED").length,
+      MODIFIED: bookingsList.filter((b) => b.status === "MODIFIED").length,
+      CANCELLED: bookingsList.filter((b) => b.status === "CANCELLED").length,
     }),
-    [bookings]
+    [bookingsList]
   );
 
   const tabs = useMemo(
@@ -250,7 +259,7 @@ export default function DashboardPage() {
     [statusCounts]
   );
 
-  if (loading) return <LoadingScreen />;
+  if (listLoading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen bg-gray-50">
