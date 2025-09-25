@@ -22,6 +22,7 @@ import toast from "react-hot-toast";
 import LoadingScreen from "@/components/LoadingScreen";
 import ConfirmCancelModal from "@/components/ConfirmCancelModal";
 
+
 interface Booking {
   _id: string;
   fullName: string;
@@ -49,6 +50,7 @@ type SortableField = keyof Booking;
 type SortDirection = "ascending" | "descending";
 
 export default function DashboardPage() {
+  // const { bookings, loading, error } = useAppSelector(state => state.booking);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<BookingStatus>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,6 +91,11 @@ export default function DashboardPage() {
 
     fetchBookings();
   }, []);
+
+
+  // useEffect(() => {
+  //   dispatch(fetchBookings());
+  // }, [dispatch]);
 
   const cancelBooking = useCallback(async (id: string) => {
     try {

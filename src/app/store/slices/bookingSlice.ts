@@ -47,7 +47,9 @@ export interface Booking {
 
 interface BookingState {
   currentBooking: Booking | null;
+  bookingsList: Booking[];
   loading: boolean;
+  listLoading: boolean;
   actionLoading: boolean;
   error: string | null;
   operation: "idle" | "pending" | "succeeded" | "failed";
@@ -55,11 +57,38 @@ interface BookingState {
 
 const initialState: BookingState = {
   currentBooking: null,
+  bookingsList: [],
   loading: false,
+  listLoading: false,
   actionLoading: false,
   error: null,
   operation: "idle",
 };
+
+
+// Async thunks for fetch booking list
+export const fetchBookings = createAsyncThunk<
+  Booking[],
+  void,
+  { rejectValue: string }
+>("booking/fetchAll", async (_, { rejectWithValue }) => {
+  try {
+    const res = await fetch("/api/bookings", {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch bookings");
+    }
+
+    const data = await res.json();
+    return data.bookings || [];
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error loading bookings";
+    return rejectWithValue(message);
+  }
+});
 
 // Async thunk for saving/updating booking
 export const saveBooking = createAsyncThunk<
@@ -200,6 +229,9 @@ const bookingSlice = createSlice({
       state.loading = false;
       state.operation = "idle";
     },
+    clearBookingsList: (state) => {
+      state.bookingsList = [];
+    },
     resetOperationStatus: (state) => {
       state.operation = "idle";
       state.error = null;
@@ -207,6 +239,20 @@ const bookingSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch all bookings
+      .addCase(fetchBookings.pending, (state) => {
+        state.listLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchBookings.fulfilled, (state, action: PayloadAction<Booking[]>) => {
+        console.log("fetchBookings =>", action.payload)
+        state.bookingsList = action.payload;
+        state.listLoading = false;
+      })
+      .addCase(fetchBookings.rejected, (state, action) => {
+        state.error = action.payload || "Failed to fetch bookings";
+        state.listLoading = false;
+      })
       // Save booking cases
       .addCase(saveBooking.pending, (state) => {
         state.loading = true;
