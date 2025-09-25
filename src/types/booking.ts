@@ -55,7 +55,7 @@ export const rentalCompanies = [
   "Dollar",
   "Enterprise",
   "Europcar",
-  "Easirent"
+  "Easirent",
   "Fox",
   "Hertz",
   "National",
