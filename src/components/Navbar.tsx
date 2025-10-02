@@ -40,7 +40,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               <IoCarSport className="w-10 h-10 text-white" />
             </div>
             <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent group-hover:from-indigo-700 group-hover:to-blue-700 transition-colors">
-              CRM
+              BFDS HUB
             </span>
           </Link>
 
