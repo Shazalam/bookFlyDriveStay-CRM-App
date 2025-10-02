@@ -12,7 +12,6 @@ export async function GET(req: Request) {
     const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
     if (!token) return apiResponse({ error: "Unauthorized" }, 401);
 
-
     const bookings = await Booking.find().sort({ createdAt: -1 });
     return apiResponse({ success: true, bookings });
   } catch (err: unknown) {

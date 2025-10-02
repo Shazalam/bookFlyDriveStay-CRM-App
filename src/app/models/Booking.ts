@@ -8,8 +8,6 @@ export interface INote {
   createdBy?: Types.ObjectId;
 }
 
-
-
 export interface IBooking extends Document {
   fullName: string;
   email: string;

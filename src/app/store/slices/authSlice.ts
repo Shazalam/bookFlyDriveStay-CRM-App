@@ -54,6 +54,7 @@ export const loginUser = createAsyncThunk<
       body: JSON.stringify(formData),
     });
     const data = await res.json();
+    console.log("login user =>", data)
     if (!res.ok || !data.success)
       return thunkAPI.rejectWithValue(data.error || 'Invalid credentials');
     return data.user as User;
@@ -69,6 +70,7 @@ export const fetchCurrentUser = createAsyncThunk<User, void, { rejectValue: stri
     try {
       const res = await fetch('/api/auth/me', { credentials: 'include' });
       const data = await res.json();
+
       if (!res.ok) return thunkAPI.rejectWithValue('Not authorized');
       return data.user as User;
     } catch {
@@ -108,6 +110,7 @@ const authSlice = createSlice({
         toast.dismiss(); toast.loading('Signing in...');
       })
       .addCase(loginUser.fulfilled, (s, a: PayloadAction<User>) => {
+        console.log("login response =>", a.payload)
         s.loading = false; s.user = a.payload; s.success = true;
         toast.dismiss(); toast.success('Logged in successfully ✅');
       })
@@ -135,21 +138,24 @@ const authSlice = createSlice({
         s.loading = true; s.error = null;
       })
       .addCase(fetchCurrentUser.fulfilled, (s, a: PayloadAction<User>) => {
+        console.log("fetchCurrent =>", a.payload)
         s.user = a.payload; s.success = true; s.loading = false;
       })
       .addCase(fetchCurrentUser.rejected, (s) => {
-        s.user = null; s.success = false;    s.loading = false;
+        s.user = null; s.success = false; s.loading = false;
       })
 
       // 🚪 Logout
-      .addCase(logoutUser.pending, () => {
+      .addCase(logoutUser.pending, (s) => {
+        s.loading = true; s.error = null;
         toast.dismiss(); toast.loading('Signing out...');
       })
       .addCase(logoutUser.fulfilled, (s) => {
-        s.user = null; s.success = false;
+        s.user = null; s.success = false; s.loading = false;
         toast.dismiss(); toast.success('Logged out successfully ✅');
       })
       .addCase(logoutUser.rejected, (s, a) => {
+        s.user = null; s.success = false; s.loading = false;
         toast.dismiss(); toast.error(a.payload as string || 'Logout failed ❌');
       });
   },

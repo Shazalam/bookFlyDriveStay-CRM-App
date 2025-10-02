@@ -6,7 +6,7 @@ import { IoCarSport } from "react-icons/io5";
 export default function LoadingScreen() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
-      
+
       {/* Car icon with gentle bounce */}
       <motion.div
         animate={{ y: [0, -8, 0] }}
@@ -26,7 +26,7 @@ export default function LoadingScreen() {
         animate={{ opacity: [0.5, 1, 0.5] }}
         transition={{ repeat: Infinity, duration: 2 }}
       >
-        Loading your bookings...
+        Loading, please wait...
       </motion.p>
     </div>
   );

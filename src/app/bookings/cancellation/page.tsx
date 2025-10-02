@@ -19,10 +19,13 @@ export default function CancellationForm() {
     const dispatch = useAppDispatch();
     const searchParams = useSearchParams();
     const id = searchParams.get("id");
-    const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
+    const {currentBooking, loading, error } = useAppSelector((state) => state.booking);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExistingCustomer] = useState(!!id);
     const [cancellationFee, setCancellationFee] = useState("");
+
+    console.log("loading in cancellation =>", loading)
+
     const [form, setForm] = useState<Booking>({
         id: "",
         fullName: "",
@@ -49,6 +52,7 @@ export default function CancellationForm() {
         dateOfBirth: "",
         refundAmount: ""
     });
+
 
     // Fetch booking data when component mounts or id changes
     useEffect(() => {
