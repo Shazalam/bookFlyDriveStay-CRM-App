@@ -1,7 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import toast from 'react-hot-toast';
 
+interface LoginResponse {
+  success: boolean;
+  message: string;
+  user: User;
+}
+
 export interface User {
+  id?: string;
   name: string;
   email: string;
   avatar?: string;
@@ -43,7 +50,7 @@ export const registerUser = createAsyncThunk<
 
 // 🔐 Login
 export const loginUser = createAsyncThunk<
-  User,
+  LoginResponse,
   { email: string; password: string },
   { rejectValue: string }
 >('auth/login', async (formData, thunkAPI) => {
@@ -56,7 +63,7 @@ export const loginUser = createAsyncThunk<
     const data = await res.json();
     if (!res.ok || !data.success)
       return thunkAPI.rejectWithValue(data.error || 'Invalid credentials');
-    return data.user as User;
+    return data;
   } catch {
     return thunkAPI.rejectWithValue('Network error');
   }
@@ -105,15 +112,12 @@ const authSlice = createSlice({
       // 🔐 Login
       .addCase(loginUser.pending, (s) => {
         s.loading = true; s.error = null;
-        toast.dismiss(); toast.loading('Signing in...');
       })
-      .addCase(loginUser.fulfilled, (s, a: PayloadAction<User>) => {
-        s.loading = false; s.user = a.payload; s.success = true;
-        toast.dismiss(); toast.success('Logged in successfully ✅');
+      .addCase(loginUser.fulfilled, (s, a: PayloadAction<LoginResponse>) => {
+        s.loading = false; s.user = a.payload.user; s.success = true;
       })
       .addCase(loginUser.rejected, (s, a) => {
         s.loading = false; s.error = a.payload as string;
-        toast.dismiss(); toast.error(a.payload as string || 'Login failed ❌');
       })
 
       // 📝 Register
@@ -138,7 +142,7 @@ const authSlice = createSlice({
         s.user = a.payload; s.success = true; s.loading = false;
       })
       .addCase(fetchCurrentUser.rejected, (s) => {
-        s.user = null; s.success = false;    s.loading = false;
+        s.user = null; s.success = false; s.loading = false;
       })
 
       // 🚪 Logout

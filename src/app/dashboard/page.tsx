@@ -19,7 +19,6 @@ import {
 } from "react-icons/fi";
 import { IoCarSport } from "react-icons/io5";
 import toast from "react-hot-toast";
-import LoadingScreen from "@/components/LoadingScreen";
 import ConfirmCancelModal from "@/components/ConfirmCancelModal";
 
 
@@ -91,11 +90,6 @@ export default function DashboardPage() {
 
     fetchBookings();
   }, []);
-
-
-  // useEffect(() => {
-  //   dispatch(fetchBookings());
-  // }, [dispatch]);
 
   const cancelBooking = useCallback(async (id: string) => {
     try {
@@ -257,7 +251,7 @@ export default function DashboardPage() {
     [statusCounts]
   );
 
-  if (loading) return <LoadingScreen />;
+  // if (loading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -353,7 +347,48 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentItems.length === 0 ? (
+                {loading ? (
+                  // 🌀 Loading State
+                  // 🦴 Skeleton Loader
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-20"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full mr-4"></div>
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                            <div className="h-3 bg-gray-200 rounded w-32"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-16"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-12"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-20"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-8 bg-gray-200 rounded w-8"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex gap-2">
+                          <div className="h-8 bg-gray-200 rounded w-8"></div>
+                          <div className="h-8 bg-gray-200 rounded w-8"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : currentItems.length === 0 ? (
+                  // 📭 Empty State
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="text-gray-500 text-lg">No {activeTab.toLowerCase()} bookings found</div>
@@ -361,6 +396,7 @@ export default function DashboardPage() {
                     </td>
                   </tr>
                 ) : (
+                  // 📊 Data Rows
                   currentItems.map((booking) => (
                     <BookingRow
                       key={booking._id}

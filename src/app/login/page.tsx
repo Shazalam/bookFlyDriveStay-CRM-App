@@ -6,41 +6,65 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast"; // ✅ make sure this is imported
 import LoadingButton from "@/components/LoadingButton";
+import { loginUser } from "../store/slices/authSlice";
+import { useAppDispatch } from "../store/hooks";
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+
+  // async function handleLogin(e: React.FormEvent) {
+  //   e.preventDefault();
+  //   setLoading(true);
+
+  //   try {
+  //     const res = await fetch("/api/auth/login", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, password }),
+  //     });
+
+  //     const data = await res.json();
+  //     console.log("login response =>", data);
+  //     setLoading(false);
+
+  //     if (res.ok && data.success) {
+  //       toast.success("Login successful! Redirecting...");
+
+  //       // 🚀 Redirect immediately when login succeeds
+  //       router.push("/dashboard");
+  //     } else {
+  //       toast.error(data.error || "Invalid credentials");
+  //     }
+  //   }catch (err: unknown) {
+  //     setLoading(false);
+  //     const message = err instanceof Error ? err.message : "Error loading booking";
+  //     toast.error(message || "Network error, please try again");
+  //   }
+  // }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+
+    const toastId = toast.loading("Signing in...");
     setLoading(true);
-
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      console.log("login response =>", data);
+      const result = await dispatch(loginUser({ email, password })).unwrap();
+      console.log("LoginPage login result:", result);
       setLoading(false);
+      
+      toast.success(`Welcome back, ${result?.user.name}!`, { id: toastId });
 
-      if (res.ok && data.success) {
-        toast.success("Login successful! Redirecting...");
-
-        // 🚀 Redirect immediately when login succeeds
-        router.push("/dashboard");
-      } else {
-        toast.error(data.error || "Invalid credentials");
-      }
-    }catch (err: unknown) {
+      router.push("/dashboard");
+    } catch (err: unknown) {
       setLoading(false);
-      const message = err instanceof Error ? err.message : "Error loading booking";
-      toast.error(message || "Network error, please try again");
+      const message = err instanceof Error ? err.message : "Login failed ❌";
+      toast.error(message, { id: toastId });
     }
   }
 

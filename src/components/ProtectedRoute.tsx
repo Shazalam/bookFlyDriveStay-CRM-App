@@ -5,45 +5,55 @@ import LoadingScreen from "./LoadingScreen";
 import Navbar from "./Navbar";
 import toast from "react-hot-toast";
 import { logout } from "@/lib/auth/logout";
+import { fetchCurrentUser } from "@/app/store/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const { user } = useAppSelector((state) => state.auth);
 
   // ✅ Detect auth routes
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-  };
+  // Fetch current user using Redux thunk
+  useEffect(() => {
+    if (user) return; // already have user
+    dispatch(fetchCurrentUser())
+      .unwrap()
+      .catch((error) => {
+        console.error("Failed to fetch user:", error);
+        toast.error("Failed to load user information");
+      });
+  }, [dispatch, user]);
 
-const handleLogout = useCallback(async () => {
-  console.log("handleLogout");
-  setLoading(true);
+  const handleLogout = useCallback(async () => {
+    console.log("handleLogout");
+    setLoading(true);
 
-  const toastId = toast.loading("Signing out...");
+    const toastId = toast.loading("Signing out...");
 
-  try {
-    await logout(); // <-- your API call to clear session
+    try {
+      await logout(); // <-- your API call to clear session
 
-    setAuthorized(false); // reset auth state immediately
+      setAuthorized(false); // reset auth state immediately
 
-    toast.success("Signed out successfully ✅", { id: toastId });
+      toast.success("Signed out successfully ✅", { id: toastId });
 
-    setTimeout(() => {
-      router.push("/login");
-    }, 600);
-  } catch (err) {
-    console.error("Logout failed:", err);
-    toast.error("Logout failed. Please try again ❌", { id: toastId });
-    // stay on same route if logout fails
-  } finally {
-    setLoading(false);
-  }
-}, [router]);
+      setTimeout(() => {
+        router.push("/login");
+      }, 600);
+    } catch (err) {
+      console.error("Logout failed:", err);
+      toast.error("Logout failed. Please try again ❌", { id: toastId });
+      // stay on same route if logout fails
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
 
 
   useEffect(() => {
@@ -88,7 +98,7 @@ const handleLogout = useCallback(async () => {
   if (!isAuthPage && authorized) {
     return (
       <>
-        <Navbar user={user} onLogout={handleLogout} />
+        {user && <Navbar user={user} onLogout={handleLogout} />}
         {children}
       </>
     );
