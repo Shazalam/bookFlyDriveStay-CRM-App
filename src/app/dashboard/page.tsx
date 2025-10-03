@@ -19,11 +19,8 @@ import {
 } from "react-icons/fi";
 import { IoCarSport } from "react-icons/io5";
 import toast from "react-hot-toast";
-import LoadingScreen from "@/components/LoadingScreen";
 import ConfirmCancelModal from "@/components/ConfirmCancelModal";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { fetchBookings } from "../store/slices/bookingSlice";
-import { useRouter } from "next/navigation";
+
 
 interface Booking {
   _id: string;
@@ -51,9 +48,8 @@ type BookingStatus = Booking["status"];
 type SortableField = keyof Booking;
 type SortDirection = "ascending" | "descending";
 
-
 export default function DashboardPage() {
-   const router = useRouter();
+  // const { bookings, loading, error } = useAppSelector(state => state.booking);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<BookingStatus>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,7 +63,6 @@ export default function DashboardPage() {
   const [itemsPerPage] = useState(10);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
-
 
   // Fetch bookings from API
   useEffect(() => {
@@ -122,18 +117,6 @@ export default function DashboardPage() {
     setBookingToCancel(id);
     setShowCancelModal(true);
   }, []);
-
-    // Called when user confirms cancellation in modal
-  const handleConfirmCancel = () => {
-    if (!bookingToCancel) return;
-
-    // Close modal
-    setShowCancelModal(false);
-
-    // Redirect to cancellation page with query param
-    router.push(`/bookings/cancellation?id=${bookingToCancel}`);
-  };
-
 
   const handleSort = useCallback((key: SortableField) => {
     let direction: SortDirection = "ascending";
@@ -268,7 +251,7 @@ export default function DashboardPage() {
     [statusCounts]
   );
 
-  if (loading) return <LoadingScreen />;
+  // if (loading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -364,7 +347,48 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentItems.length === 0 ? (
+                {loading ? (
+                  // 🌀 Loading State
+                  // 🦴 Skeleton Loader
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-20"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full mr-4"></div>
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                            <div className="h-3 bg-gray-200 rounded w-32"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-16"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-12"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-4 bg-gray-200 rounded w-20"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-8 bg-gray-200 rounded w-8"></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex gap-2">
+                          <div className="h-8 bg-gray-200 rounded w-8"></div>
+                          <div className="h-8 bg-gray-200 rounded w-8"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : currentItems.length === 0 ? (
+                  // 📭 Empty State
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="text-gray-500 text-lg">No {activeTab.toLowerCase()} bookings found</div>
@@ -372,6 +396,7 @@ export default function DashboardPage() {
                     </td>
                   </tr>
                 ) : (
+                  // 📊 Data Rows
                   currentItems.map((booking) => (
                     <BookingRow
                       key={booking._id}
@@ -429,7 +454,11 @@ export default function DashboardPage() {
                 setShowCancelModal(false);
                 setBookingToCancel(null);
               }}
-               onConfirm={handleConfirmCancel}
+              onConfirm={() => {
+                if (bookingToCancel) {
+                  cancelBooking(bookingToCancel);
+                }
+              }}
             />
           </>
         )
@@ -454,7 +483,6 @@ function BookingRow({
   booking,
   expanded,
   onExpand,
-  onCancel,
   getStatusIcon,
   getStatusColor
 }: BookingRowProps) {
@@ -647,22 +675,12 @@ function BookingRow({
               </Link>
 
               {booking.status !== "CANCELLED" && (
-                <>
-                  <button
-                    onClick={() => onCancel(booking._id)}
-                    className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition"
-                  >
-                    Cancel Booking
-                  </button>
-                </>
-                // <Link
-                //   href={`/bookings/cancellation?id=${booking._id}`}
-                //   className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-70 text-white text-sm font-medium rounded-md transition"
-                // >
-                //   Cancel Booking
-                // </Link>
-              )
-              }
+                <Link
+                  href={`/bookings/cancellation?id=${booking._id}`}
+                  className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-70 text-white text-sm font-medium rounded-md transition"
+                >
+                  Cancel Booking
+                </Link>)}
             </div>
           </td>
         </tr>

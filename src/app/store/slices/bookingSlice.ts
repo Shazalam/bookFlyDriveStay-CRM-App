@@ -78,14 +78,11 @@ export const fetchBookings = createAsyncThunk<
       credentials: "include",
     });
 
-    console.log("res =>", res)
-    
     if (!res.ok) {
       throw new Error("Failed to fetch bookings");
     }
 
     const data = await res.json();
-    console.log("---", data)
     return data.bookings || [];
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error loading bookings";

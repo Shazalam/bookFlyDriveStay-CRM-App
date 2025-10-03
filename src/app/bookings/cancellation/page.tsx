@@ -19,13 +19,13 @@ export default function CancellationForm() {
     const dispatch = useAppDispatch();
     const searchParams = useSearchParams();
     const id = searchParams.get("id");
-    const {currentBooking, loading, error } = useAppSelector((state) => state.booking);
+    const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
+    // ✅ Use Redux state instead of local state
+    const { user } = useAppSelector((state) => state.auth);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExistingCustomer] = useState(!!id);
     const [cancellationFee, setCancellationFee] = useState("");
-
-    console.log("loading in cancellation =>", loading)
-
     const [form, setForm] = useState<Booking>({
         id: "",
         fullName: "",
@@ -52,7 +52,6 @@ export default function CancellationForm() {
         dateOfBirth: "",
         refundAmount: ""
     });
-
 
     // Fetch booking data when component mounts or id changes
     useEffect(() => {
@@ -95,18 +94,21 @@ export default function CancellationForm() {
         }
     }, [currentBooking, id]);
 
+
     // Fetch current user using Redux thunk
     useEffect(() => {
-        dispatch(fetchCurrentUser())
-            .unwrap()
-            .then((userData) => {
-                setForm((prev) => ({ ...prev, salesAgent: userData.name }));
-            })
-            .catch((error) => {
-                console.error("Failed to fetch user:", error);
-                toast.error("Failed to load user information");
-            });
-    }, [dispatch]);
+        if (user && !user.name) {
+            dispatch(fetchCurrentUser())
+                .unwrap()
+                .then((userData) => {
+                    setForm((prev) => ({ ...prev, salesAgent: userData.name }));
+                })
+                .catch((error) => {
+                    console.error("Failed to fetch user:", error);
+                    toast.error("Failed to load user information");
+                });
+        }
+    }, [dispatch, user]);
 
     // ✅ Calculate refund and update MCO with cancellation fee
     const calculateRefund = () => {

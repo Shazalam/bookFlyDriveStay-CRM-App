@@ -64,8 +64,6 @@ export const rentalCompanies = [
   "Thrifty",
   "Zipcar",
 ];
-
-
 export const editableGroups = {
   Customer: ["fullName", "email", "phoneNumber"],
   Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],

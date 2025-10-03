@@ -19,7 +19,7 @@ import { IoCarSport } from "react-icons/io5"; // 🚗 car icon for branding
 
 
 interface NavbarProps {
-  user?: User;   // 👈 reuse your slice type
+   user: User | null;   // ✅ allow null
   onLogout?: () => void;
 }
 

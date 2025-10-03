@@ -1,96 +1,92 @@
 "use client";
-
 import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import LoadingScreen from "./LoadingScreen";
 import Navbar from "./Navbar";
 import toast from "react-hot-toast";
+import { logout } from "@/lib/auth/logout";
+import { fetchCurrentUser } from "@/app/store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { fetchCurrentUser, logoutUser } from "@/app/store/slices/authSlice";
-import ErrorComponent from "./ErrorComponent";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const dispatch = useAppDispatch();
-
-  // ✅ Pull state from Redux properly
-  const { user, loading, error } = useAppSelector((state) => state.auth);
-
-  console.log("user Data=>", user)
-  console.log("user loading=>", loading)
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const { user } = useAppSelector((state) => state.auth);
 
   // ✅ Detect auth routes
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
-  // 🔹 Fetch current user when app loads
+  // Fetch current user using Redux thunk
   useEffect(() => {
-    if (!user) dispatch(fetchCurrentUser()).unwrap();
+    if (user) return; // already have user
+    dispatch(fetchCurrentUser())
+      .unwrap()
+      .catch((error) => {
+        console.error("Failed to fetch user:", error);
+        toast.error("Failed to load user information");
+      });
   }, [dispatch, user]);
 
-  // 🔹 Handle logout
   const handleLogout = useCallback(async () => {
+    console.log("handleLogout");
+    setLoading(true);
+
+    const toastId = toast.loading("Signing out...");
+
     try {
-      await dispatch(logoutUser()).unwrap();
-      setAuthorized(false);
+      await logout(); // <-- your API call to clear session
+
+      setAuthorized(false); // reset auth state immediately
+
+      toast.success("Signed out successfully ✅", { id: toastId });
+
       setTimeout(() => {
         router.push("/login");
       }, 600);
     } catch (err) {
       console.error("Logout failed:", err);
-      toast.error("Logout failed. Please try again ❌");
+      toast.error("Logout failed. Please try again ❌", { id: toastId });
+      // stay on same route if logout fails
+    } finally {
+      setLoading(false);
     }
-  }, [dispatch, router]);
+  }, [router]);
 
-  // 🔹 Check auth state whenever Redux updates
-  // useEffect(() => {
-  //   if (loading) return; // wait for fetch
-  //   if (user) {
-  //     setAuthorized(true);
-  //     if (isAuthPage) {
-  //       router.replace("/dashboard");
-  //     }
-  //   } else {
-  //     setAuthorized(false);
-  //     if (!isAuthPage) {
-  //       router.replace("/login");
-  //     }
-  //   }
-  // }, [user, loading, isAuthPage, router]);
 
   useEffect(() => {
-    if (loading) return; // wait until fetch finishes
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
 
-    if (user) {
-      setAuthorized(true);
-
-      // 🚀 Only redirect logged-in users if they are on login/register pages
-      if (isAuthPage) {
-        router.replace("/dashboard");
-      }
-    } else {
-      setAuthorized(false);
-
-      // 🚀 Only redirect logged-out users if they are trying to access protected pages
-      if (!isAuthPage) {
-        router.replace("/login");
+        if (res.ok) {
+          setAuthorized(true);
+          // ✅ If logged in and trying to access login/register → redirect
+          if (isAuthPage) {
+            router.replace("/dashboard");
+          }
+        } else {
+          setAuthorized(false);
+          // ✅ If not logged in and on protected route → redirect
+          if (!isAuthPage) {
+            router.replace("/login");
+          }
+        }
+      } catch {
+        setAuthorized(false);
+        if (!isAuthPage) {
+          router.replace("/login");
+        }
+      } finally {
+        setLoading(false);
       }
     }
-  }, [user, loading, isAuthPage, router]);
 
+    checkAuth();
+  }, [router, isAuthPage]);
 
-  if (error) {
-    return (
-      <ErrorComponent
-        title="Failed to Load Booking"
-        message={error || "Unknown error occurred"}
-      // onRetry={() => dispatch(fetchBookingById(id!))}
-      />
-    );
-  }
-
-  // 🌀 Show loader while checking auth
   if (loading) return <LoadingScreen />;
 
   // ✅ Auth pages: only visible when logged out
@@ -98,18 +94,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <>{children}</>;
   }
 
-
   // ✅ Protected pages: only visible when logged in
   if (!isAuthPage && authorized) {
     return (
       <>
-        <Navbar user={user!} onLogout={handleLogout} />
+        {user && <Navbar user={user} onLogout={handleLogout} />}
         {children}
       </>
     );
   }
 
-  // 🚫 In all other cases → render nothing (redirect will happen)
+  // 🚫 In all other cases → render nothing (router will redirect anyway)
   return null;
 }
-
