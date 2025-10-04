@@ -81,7 +81,7 @@ export const refundTemplate = (data: BookingTemplateData) => {
                   BookFlyDriveStay
                 </p>
 
-                                <!-- DocuSign Button -->
+                <!-- DocuSign Button -->
 <div style="text-align:center;margin:24px 0;">
   <a href="https://www.nationfirstchoice.com/docusign?name=${data.fullName}&bookingId=${data._id || ''}" 
      style="display:inline-block;
@@ -97,6 +97,7 @@ export const refundTemplate = (data: BookingTemplateData) => {
     📝 Complete DocuSign Form
   </a>
 </div>
+
                   <!-- Closing -->
                   <!-- [START] CORRECTED SIGNATURE AND CONTACT INFO -->
                 <div style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#4b5563;">
