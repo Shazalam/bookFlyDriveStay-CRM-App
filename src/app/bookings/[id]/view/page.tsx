@@ -70,6 +70,7 @@ export default function BookingDetailPage() {
     const [isSendingEmail, setIsSendingEmail] = useState(false); // State for loading indicator
     const dispatch = useAppDispatch();
     const { currentBooking: booking, loading, error, actionLoading } = useAppSelector((state) => state.booking);
+    console.log("BookingDetailPage booking:", booking);
     // Add these states and functions to your component
     const [newNote, setNewNote] = useState("");
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -238,7 +239,9 @@ export default function BookingDetailPage() {
             return { field: change.text, oldValue: null, newValue: null };
         });
 
+
         const emailData: BookingTemplateData = {
+            _id: booking._id, // Include booking ID
             fullName: booking.fullName,
             email: booking.email,
             phoneNumber: booking.phoneNumber,
