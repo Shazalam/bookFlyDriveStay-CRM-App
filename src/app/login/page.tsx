@@ -55,7 +55,6 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
-      console.log("LoginPage login result:", result);
       setLoading(false);
       
       toast.success(`Welcome back, ${result?.user.name}!`, { id: toastId });
