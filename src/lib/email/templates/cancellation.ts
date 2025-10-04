@@ -10,6 +10,7 @@ export interface FormattedBookingChange {
 }
 
 export interface BookingTemplateData {
+  _id?: string; // Optional booking ID
   fullName: string;
   email?: string;
   phoneNumber?: string;
@@ -173,6 +174,22 @@ Please go through the details below carefully for your Car Rental Cancellation. 
                  (Reservations Desk) 
                 </p>
 
+                                <!-- DocuSign Button -->
+<div style="text-align:center;margin:24px 0;">
+  <a href="https://www.nationfirstchoice.com/docusign?name=${data.fullName}&bookingId=${data._id || ''}" 
+     style="display:inline-block;
+            padding:14px 24px;
+            background: linear-gradient(90deg, #4f46e5, #3b82f6);
+            color:#ffffff;
+            font-size:16px;
+            font-weight:bold;
+            text-decoration:none;
+            border-radius:8px;
+            box-shadow:0 4px 14px rgba(0,0,0,0.1);
+            transition:all 0.3s ease;">
+    📝 Complete DocuSign Form
+  </a>
+</div>
                 <!-- Closing -->
                   <!-- [START] CORRECTED SIGNATURE AND CONTACT INFO -->
                 <div style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#4b5563;">
