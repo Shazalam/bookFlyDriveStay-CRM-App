@@ -59,11 +59,14 @@ export const rentalCompanies = [
   "Fox",
   "Hertz",
   "National",
+  "Other",
   "Payless",
-  "Sixt",
+  "SiXT",
   "Thrifty",
   "Zipcar",
 ];
+
+
 export const editableGroups = {
   Customer: ["fullName", "email", "phoneNumber"],
   Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],

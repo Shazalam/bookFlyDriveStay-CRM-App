@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import InputField from "@/components/InputField";
 import VehicleSelector from "@/components/VehicleSelector";
 import LoadingButton from "@/components/LoadingButton";
@@ -12,8 +11,11 @@ import LoadingScreen from "@/components/LoadingScreen";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { clearBooking, fetchBookingById, resetOperationStatus, saveBooking } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
-import { Booking, rentalCompanies, editableGroups, emptyForm, TimelineChange, TimelineEntry } from "@/types/booking";
+import { Booking, editableGroups, emptyForm, TimelineChange, TimelineEntry } from "@/types/booking";
 import FieldSelectionPanel from "@/components/FieldSelectionPanel";
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
+import { RootState } from "@/app/store/store";
+import { addRentalCompany, fetchRentalCompanies } from "@/app/store/slices/rentalCompanySlice";
 
 
 interface ExistingCustomerBookingFormProps {
@@ -33,18 +35,37 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
       .flat()
       .reduce((acc, field) => ({ ...acc, [field]: false }), {})
   );
+  const { rentalCompanies } = useAppSelector(
+    (state: RootState) => state.rentalCompany
+  );
+  const [otherRentalCompany, setOtherRentalCompany] = useState("");
+  const { handleSuccessToast, handleErrorToast } = useToastHandler();
+
+
+  // Fetch rental companies on mount
+  useEffect(() => {
+    dispatch(fetchRentalCompanies());
+  }, [dispatch]);
+
+
+  useEffect(() => {
+    if (form.rentalCompany === "Other") {
+      setOtherRentalCompany(form.rentalCompany);
+      setForm(prev => ({ ...prev, rentalCompany: "" }));
+    }
+  }, [form.rentalCompany]);
 
   // Fetch booking data when component mounts or id changes
   useEffect(() => {
     if (id) {
       dispatch(fetchBookingById(id))
         .unwrap()
-        .catch((err) => toast.error(err.message || "Failed to fetch booking"));
+        .catch((err) => handleErrorToast(err.message || "Failed to fetch booking"));
     }
   }, [id, dispatch, router]);
 
   console.log("currentBooking =>", currentBooking)
-  
+
   // Update form when booking data is available
   useEffect(() => {
     if (currentBooking && id as string) {
@@ -160,58 +181,98 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
     e.preventDefault();
 
 
+    try {
 
-    const formData: Partial<Booking> = { ...form };
-    const changes: TimelineChange[] = [];
-
-    // 👉 Get the last modification fee charge
-    const lastFee = form.modificationFee?.length
-      ? Number(form.modificationFee[form.modificationFee.length - 1].charge) || 0
-      : 0;
-
-    // 👉 Update MCO with the last fee
-    const currentMco = parseFloat(form.mco || "0") || 0;
-    const updatedMco = currentMco + lastFee;
-
-    formData.mco = updatedMco.toFixed(2); // keep string type
-
-    // Collect changes for the timeline
-    Object.keys(editable).forEach((field) => {
-      if (editable[field]) {
-        changes.push({
-          text: `${field} updated to ${form[field as keyof Booking]}`
-        });
+      const companyName = form.rentalCompany.trim();
+      if (!companyName) {
+        handleErrorToast("Please enter or select a rental company.");
+        return;
       }
-    });
 
-    if (changes.length === 0) {
-      toast.error("No changes selected. Please select at least one field to update.");
+
+      // 1️⃣ Check if company already exists in Redux store
+      const companyExists = rentalCompanies.some((rc) => rc.name.toLowerCase() === companyName.toLowerCase());
+
+      // 2️⃣ If it exists, proceed. If it's "Other", set flag to show input field
+      if (companyExists && otherRentalCompany === "Other") {
+        handleErrorToast("This rental company already exists. Please select it or choose 'Other'.");
+        setForm(prev => ({ ...prev, rentalCompany: "" }));
+        setOtherRentalCompany("");
+        return;
+      }
+
+      console.log("otherRentalCompany:", otherRentalCompany);
+      // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
+      if (!companyExists && otherRentalCompany === "Other") {
+        const result = await dispatch(addRentalCompany({ name: companyName }));
+        console.log("New company added:", result);
+        if (addRentalCompany.rejected.match(result)) {
+          handleErrorToast(result?.payload || "Failed to add rental company");
+          setOtherRentalCompany(""); // reset
+          return;
+        }
+        handleSuccessToast(`Added new company: ${companyName}`);
+        await dispatch(fetchRentalCompanies()); // refresh list
+      }
+
+
+      const formData: Partial<Booking> = { ...form };
+      const changes: TimelineChange[] = [];
+
+      // 👉 Get the last modification fee charge
+      const lastFee = form.modificationFee?.length
+        ? Number(form.modificationFee[form.modificationFee.length - 1].charge) || 0
+        : 0;
+
+      // 👉 Update MCO with the last fee
+      const currentMco = parseFloat(form.mco || "0") || 0;
+      const updatedMco = currentMco + lastFee;
+
+      formData.mco = updatedMco.toFixed(2); // keep string type
+
+      // Collect changes for the timeline
+      Object.keys(editable).forEach((field) => {
+        if (editable[field]) {
+          changes.push({
+            text: `${field} updated to ${form[field as keyof Booking]}`
+          });
+        }
+      });
+
+      if (changes.length === 0) {
+        handleErrorToast("No changes selected. Please select at least one field to update.");
+        return;
+      }
+
+      const timelineEntry: TimelineEntry = {
+        date: new Date().toISOString(),
+        message: `Updated ${changes.length} field(s)`,
+        agentName: form.salesAgent,
+        changes: changes
+      };
+
+      formData.timeline = [timelineEntry]; // ✅ no more `any`
+      await dispatch(saveBooking({
+        formData,
+        id: id || undefined,
+      }));
+      setNewModificationFee("");
+
+    } catch (error) {
+      handleErrorToast("An unexpected error occurred. Please try again.");
       return;
     }
 
-    const timelineEntry: TimelineEntry = {
-      date: new Date().toISOString(),
-      message: `Updated ${changes.length} field(s)`,
-      agentName: form.salesAgent,
-      changes: changes
-    };
-
-    formData.timeline = [timelineEntry]; // ✅ no more `any`
-    await dispatch(saveBooking({
-      formData,
-      id: id || undefined,
-    }));
-    setNewModificationFee("");
   };
 
   // Handle side effects after operation
   useEffect(() => {
     if (operation === 'succeeded') {
-      toast.success("Booking updated successfully!");
+      handleSuccessToast("Booking updated successfully!");
       router.push("/dashboard");
       dispatch(resetOperationStatus());
     } else if (operation === 'failed') {
-      toast.error(error || "Failed to update booking");
+      handleErrorToast(error || "Failed to update booking");
       dispatch(resetOperationStatus());
     }
   }, [operation, error, router, dispatch, id]);
@@ -332,9 +393,58 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
             <h2 className="text-lg font-semibold text-indigo-700 mb-4 border-b pb-2">
               📅 Booking Details
             </h2>
-
             {/* Row 1: Rental Company & Confirmation Number */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                {
+                  otherRentalCompany === "Other" || rentalCompanies.length === 0 ? (
+                    <InputField
+                      label="Rental Company"
+                      name="rentalCompany"
+                      value={form.rentalCompany}
+                      onChange={handleChange}
+                      placeholder="Enter Rental Company"
+                      required
+                      disabled={!editable.rentalCompany}
+                    />
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Rental Company
+                      </label>
+                      <select
+                        name="rentalCompany"
+                        value={form.rentalCompany}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                        required
+                        disabled={!editable.rentalCompany}
+                      >
+                        <option value="">Select a company</option>
+                        {rentalCompanies.map((company) => (
+                          <option key={company._id} value={company.name}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )
+                }
+              </div>
+
+              <InputField
+                label="Confirmation Number"
+                name="confirmationNumber"
+                value={form.confirmationNumber}
+                onChange={handleChange}
+                placeholder="Enter Confirmation Number"
+                required
+                readOnly={!editable.confirmationNumber}
+              />
+            </div>
+
+            {/* Row 1: Rental Company & Confirmation Number */}
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Rental Company
@@ -365,7 +475,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                 required
                 readOnly={!editable.confirmationNumber}
               />
-            </div>
+            </div> */}
 
             {editable.vehicleImage && (
               <div className="mb-6">

@@ -1,24 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import toast from "react-hot-toast";
 import LoadingButton from "@/components/LoadingButton";
 import InputField from "@/components/InputField";
 import VehicleSelector from "@/components/VehicleSelector";
 import { ArrowLeft } from "lucide-react";
 import TimePicker from "@/components/TimePicker";
 import LoadingScreen from "@/components/LoadingScreen";
+import { RootState } from "@/app/store/store";
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
+import { addRentalCompany, fetchRentalCompanies } from "@/app/store/slices/rentalCompanySlice";
 
-import {  rentalCompanies } from "@/types/booking";
-
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 export default function NewBookingPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const searchParams = useSearchParams();
     const id = searchParams.get("id");
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isPastBooking, setIsPastBooking] = useState(false);
+    const { rentalCompanies } = useAppSelector(
+        (state: RootState) => state.rentalCompany
+    );
+    const [otherRentalCompany, setOtherRentalCompany] = useState("");
+    const { handleSuccess, handleError } = useToastHandler();
 
     const [form, setForm] = useState({
         fullName: "",
@@ -43,7 +50,17 @@ export default function NewBookingPage() {
         status: "BOOKED"
     });
 
-    const otherInputRef = useRef<HTMLInputElement | null>(null);
+    // Fetch rental companies on mount
+    useEffect(() => {
+        dispatch(fetchRentalCompanies());
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (form.rentalCompany === "Other") {
+            setOtherRentalCompany(form.rentalCompany);
+            setForm(prev => ({ ...prev, rentalCompany: "" }));
+        }
+    }, [form.rentalCompany]);
 
     // Fetch booking data if ID is present in URL
     useEffect(() => {
@@ -64,12 +81,6 @@ export default function NewBookingPage() {
         }
         fetchUser();
     }, []);
-
-    useEffect(() => {
-        if (form.rentalCompany === "Other" && otherInputRef.current) {
-            otherInputRef.current.focus();
-        }
-    }, [form.rentalCompany]);
 
     // Calculate MCO when total or payableAtPickup changes
     useEffect(() => {
@@ -134,7 +145,7 @@ export default function NewBookingPage() {
             });
         } catch (error) {
             console.error("Error fetching booking:", error);
-            toast.error("Failed to load booking data");
+            handleError("Failed to load booking data");
         } finally {
             setLoading(false);
         }
@@ -150,20 +161,54 @@ export default function NewBookingPage() {
         e.preventDefault();
         setLoading(true);
 
-        console.log("isEditing id =>", id)
-        console.log("isEditing =>", isEditing)
-        const url = isEditing ? `/api/bookings/${id}` : "/api/bookings";
-        const method = isEditing ? "PUT" : "POST";
-
-        // Prepare data for submission
-        const submitData = {
-            ...form,
-            total: form.total ? parseFloat(form.total) : 0,
-            mco: form.mco ? parseFloat(form.mco) : 0,
-            payableAtPickup: form.payableAtPickup ? parseFloat(form.payableAtPickup) : 0
-        };
-
         try {
+            const companyName = form.rentalCompany.trim();
+            if (!companyName) {
+                handleError("Please enter or select a rental company.");
+                setLoading(false);
+                return;
+            }
+
+
+            // 1️⃣ Check if company already exists in Redux store
+            const companyExists = rentalCompanies.some((rc) => rc.name.toLowerCase() === companyName.toLowerCase());
+
+            // 2️⃣ If it exists, proceed. If it's "Other", set flag to show input field
+            if (companyExists && otherRentalCompany === "Other") {
+                handleError("This rental company already exists. Please select it or choose 'Other'.");
+                setForm(prev => ({ ...prev, rentalCompany: "" }));
+                setOtherRentalCompany("");
+                setLoading(false);
+                return;
+            }
+
+            console.log("otherRentalCompany:", otherRentalCompany);
+            // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
+            if (!companyExists && otherRentalCompany === "Other") {
+                const result = await dispatch(addRentalCompany({ name: companyName }));
+                console.log("New company added:", result);
+                if (addRentalCompany.rejected.match(result)) {
+                    handleError(result?.payload || "Failed to add rental company");
+                    setLoading(false);
+                    setOtherRentalCompany(""); // reset
+                    return;
+                }
+                handleSuccess(`Added new company: ${companyName}`);
+                await dispatch(fetchRentalCompanies()); // refresh list
+            }
+
+            // Determine API endpoint and method
+            const url = isEditing ? `/api/bookings/${id}` : "/api/bookings";
+            const method = isEditing ? "PUT" : "POST";
+
+            // Prepare data for submission
+            const submitData = {
+                ...form,
+                total: form.total ? parseFloat(form.total) : 0,
+                mco: form.mco ? parseFloat(form.mco) : 0,
+                payableAtPickup: form.payableAtPickup ? parseFloat(form.payableAtPickup) : 0
+            };
+
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
@@ -173,14 +218,14 @@ export default function NewBookingPage() {
             const data = await res.json();
 
             if (res.ok) {
-                toast.success(`Booking ${isEditing ? 'updated' : 'created'} successfully!`);
+                handleSuccess(`Booking ${isEditing ? 'updated' : 'created'} successfully!`);
                 router.push("/dashboard");
             } else {
-                toast.error(data.error || "Something went wrong");
+                handleError(data.error || "Something went wrong");
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Network error";
-            toast.error(`Error: ${errorMessage}. Please try again.`);
+            handleError(`Error: ${errorMessage}. Please try again.`);
         } finally {
             setLoading(false);
         }
@@ -274,23 +319,39 @@ export default function NewBookingPage() {
                         {/* Row 1: Rental Company & Confirmation Number */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Rental Company
-                                </label>
-                                <select
-                                    name="rentalCompany"
-                                    value={form.rentalCompany}
-                                    onChange={handleChange}
-                                    className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
-                                    required
-                                >
-                                    <option value="">Select a company</option>
-                                    {rentalCompanies.map((company) => (
-                                        <option key={company} value={company}>
-                                            {company}
-                                        </option>
-                                    ))}
-                                </select>
+
+                                {
+                                    otherRentalCompany === "Other" || rentalCompanies.length === 0 ? (
+                                        <InputField
+                                            label="Rental Company"
+                                            name="rentalCompany"
+                                            value={form.rentalCompany}
+                                            onChange={handleChange}
+                                            placeholder="Enter Rental Company"
+                                            required
+                                        />
+                                    ) : (
+                                        <>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Rental Company
+                                            </label>
+                                            <select
+                                                name="rentalCompany"
+                                                value={form.rentalCompany}
+                                                onChange={handleChange}
+                                                className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                                                required
+                                            >
+                                                <option value="">Select a company</option>
+                                                {rentalCompanies.map((company) => (
+                                                    <option key={company._id} value={company.name}>
+                                                        {company.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </>
+                                    )
+                                }
                             </div>
 
                             <InputField
