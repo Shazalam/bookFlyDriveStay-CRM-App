@@ -22,6 +22,8 @@ import GiftCardModal from "@/components/GiftCardModal";
 import { giftCardTemplate, GiftCardTemplateData } from "@/lib/email/templates/giftCard";
 import { fetchCustomerById } from "@/app/store/slices/customerSlice";
 import ImagePreviewModal from "@/components/docuSignPreviewModal";
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
+import { fetchCurrentUser, User } from "@/app/store/slices/authSlice";
 
 
 // Define the FormattedBookingChange interface locally
@@ -40,13 +42,6 @@ interface Note {
     updatedAt?: string;
 }
 
-interface Agent {
-    id: string;
-    name: string;
-    email: string;
-}
-
-
 interface CardData {
     fullName: string;
     amount: string;
@@ -63,7 +58,10 @@ export default function BookingDetailPage() {
         contact: true,
         company: true
     });
-    const [agent, setAgent] = useState<Agent | null>(null);
+    // ✅ Use Redux state instead of local state
+    const { user } = useAppSelector((state) => state.auth);
+    
+    const [agent, setAgent] = useState<User | null>(null);
 
     // 2. Rename states for clarity
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,6 +90,8 @@ export default function BookingDetailPage() {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [modalTitle, setModalTitle] = useState('');
 
+    const { handleSuccessToast, handleErrorToast } = useToastHandler();
+
     // Separate handler for voucher emails
     const handleVoucherSend = (voucherData: CardData) => {
         if (!booking) return;
@@ -99,7 +99,7 @@ export default function BookingDetailPage() {
         setCardData(voucherData); // Store for future use
 
         if (!voucherData?.amount || !voucherData?.giftCode || !voucherData?.expirationDate) {
-            toast.error("Voucher card data is missing.");
+            handleErrorToast("Voucher card data is missing.");
             return;
         }
 
@@ -140,23 +140,30 @@ export default function BookingDetailPage() {
         dispatch(addNote({ bookingId: id as string, text: newNote.trim() }))
             .unwrap()
             .then(() => {
-                toast.success("Note added successfully!");
+                handleSuccessToast("Note added successfully!");
                 setNewNote("");
             })
-            .catch((err) => toast.error(err));
+            .catch((err) => handleErrorToast(err));
     };
 
-    // Fetch logged-in agent
+    
+    // Fetch current user using Redux thunk
     useEffect(() => {
-        async function fetchUser() {
-            const res = await fetch("/api/auth/me", { credentials: "include" });
-            const data = await res.json();
-            if (data.user) {
-                setAgent(data?.user)
-            }
+        if (!user) {
+            dispatch(fetchCurrentUser())
+                .unwrap()
+                .then((userData) => {
+                    setAgent(userData);
+                })
+                .catch((error) => {
+                    console.error("Failed to fetch user:", error);
+                    handleErrorToast("Failed to load user information");
+                });
+        } else {
+            setAgent(user);
         }
-        fetchUser();
-    }, []);
+    }, [dispatch, user,handleErrorToast]);
+
 
     // Update Note
     const handleUpdateNote = () => {
@@ -168,11 +175,11 @@ export default function BookingDetailPage() {
         }))
             .unwrap()
             .then(() => {
-                toast.success("Note updated successfully!");
+                handleSuccessToast("Note updated successfully!");
                 setEditingNoteId(null);
                 setEditingNoteText("");
             })
-            .catch((err) => toast.error(err));
+            .catch((err) => handleErrorToast(err));
     };
 
     // Delete Note
@@ -184,11 +191,11 @@ export default function BookingDetailPage() {
         }))
             .unwrap()
             .then(() => {
-                toast.success("Note deleted successfully!");
+                handleSuccessToast("Note deleted successfully!");
                 setSelectedNote(null);
                 setOpenDialog(false);
             })
-            .catch((err) => toast.error(err));
+            .catch((err) => handleErrorToast(err));
     };
 
     const getEmailTemplate = (status: string, emailData: BookingTemplateData & { refundAmount?: string; processingFee?: string }) => {
@@ -286,7 +293,7 @@ export default function BookingDetailPage() {
 
                 case "Refund": {
                     if (!booking.refundAmount || !booking.mco) {
-                        toast.error("Refund data is missing.");
+                        handleErrorToast("Refund amount is missing.");
                         return;
                     }
 
@@ -308,7 +315,7 @@ export default function BookingDetailPage() {
 
                 case "Voucher": {
                     if (!currentCardData?.amount || !currentCardData?.giftCode || !currentCardData?.expirationDate) {
-                        toast.error("Voucher card data is missing.");
+                        handleErrorToast("Voucher card data is missing.");
                         return;
                     }
 
@@ -332,18 +339,18 @@ export default function BookingDetailPage() {
                 }
 
                 default:
-                    toast.error(`Email template for "${type}" is not yet implemented.`);
+                    handleErrorToast(`Email template for "${type}" is not yet implemented.`);
             }
         } catch (error) {
             console.error("Error generating email template:", error);
-            toast.error("Failed to generate email template.");
+            handleErrorToast("Failed to generate email template.");
         }
     };
 
     // --- NEW function to handle the actual email submission ---
     const handleEmailSubmit = async () => {
         if (!booking || !emailPreviewHtml) {
-            toast.error("Cannot send email. Data is missing.");
+            handleErrorToast("Cannot send email. Data is missing.");
             return;
         }
 
@@ -369,31 +376,47 @@ export default function BookingDetailPage() {
                 throw new Error(errorData.message || 'Failed to send email.');
             }
 
-            toast.success('Email sent successfully!', { id: toastId });
+            handleSuccessToast('Email sent successfully!', { id: toastId });
             setIsModalOpen(false); // Close modal on success
 
         } catch (error: unknown) {
             console.error("Email sending failed:", error);
             const message = error instanceof Error ? error.message : "An unknown error occurred.";
-            toast.error(`Error: ${message}`, { id: toastId });
+            handleErrorToast(`Error: ${message}`, { id: toastId });
         } finally {
             setIsSendingEmail(false);
         }
     };
 
     useEffect(() => {
-        if (id) {
-            dispatch(fetchBookingById(id as string))
-                .unwrap()
-                .catch((err) => toast.error(err));
+        if (!id) return;
+        if (booking?._id) return; // ✅ already loaded, skip fetching
 
-            // Fetch customer data using the booking ID
-            dispatch(fetchCustomerById(id as string))
-                .unwrap()
-                .catch((err) => console.error('Failed to fetch customer data:', err));
+        (async () => {
+            try {
+                await dispatch(fetchBookingById(id as string)).unwrap();
+            } catch (error) {
+                handleErrorToast(
+                    error instanceof Error ? error.message : "Failed to load booking details"
+                );
+            }
         }
-    }, [id, dispatch]);
+        )();
+    }, [id, booking?._id, dispatch, handleErrorToast]);
 
+    useEffect(() => {
+        if (activeTab !== "files" || !id) return;
+
+        (async () => {
+            try {
+                await dispatch(fetchCustomerById(id as string)).unwrap();
+            } catch (error) {
+                handleErrorToast(
+                    error instanceof Error ? error.message : "Failed to load customer details"
+                );
+            }
+        })();
+    }, [activeTab, id, dispatch, handleErrorToast]);
 
     // Format date function
     const formatDate = (dateString: string) => {

@@ -47,10 +47,8 @@ export async function DELETE(
 ) {
   try {
     await connectDB();
-    console.log("Deleting note before");
 
     const { id, noteId } = await context.params; // ✅ await the params
-    console.log("Deleting note =>", id, noteId);
 
     // Auth check
     const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
@@ -74,7 +72,6 @@ export async function DELETE(
 
     return apiResponse({ success: true, booking: updatedBooking }, 200);
   } catch (err: unknown) {
-    console.error("DELETE /bookings/:id/notes/:noteId error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
   }

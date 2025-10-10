@@ -20,6 +20,9 @@ import {
 import { IoCarSport } from "react-icons/io5";
 import toast from "react-hot-toast";
 import ConfirmCancelModal from "@/components/ConfirmCancelModal";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { fetchCurrentUser } from "../store/slices/authSlice";
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 
 
 interface Booking {
@@ -50,6 +53,7 @@ type SortDirection = "ascending" | "descending";
 
 export default function DashboardPage() {
   // const { bookings, loading, error } = useAppSelector(state => state.booking);
+  const dispatch = useAppDispatch();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<BookingStatus>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,9 +67,29 @@ export default function DashboardPage() {
   const [itemsPerPage] = useState(10);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  // ✅ Use Redux state instead of local state
+  const { user } = useAppSelector((state) => state.auth);
+  const { handleErrorToast } = useToastHandler();
+  
+  // Fetch current user using Redux thunk
+  useEffect(() => {
+    if (user?.id) return // already have user
+
+    (async () => {
+        try {
+          await dispatch(fetchCurrentUser()).unwrap();
+        } catch (error) {
+          console.error("Failed to fetch user:", error);
+          handleErrorToast("Failed to load user information");
+        }
+      }
+    )();
+  }, [dispatch, user?.id,handleErrorToast]);
 
   // Fetch bookings from API
   useEffect(() => {
+    if(!user?.id) return;
+
     async function fetchBookings() {
       try {
         setLoading(true);
@@ -80,6 +104,7 @@ export default function DashboardPage() {
 
         const data = await res.json();
         setBookings(data.bookings || []);
+
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Error loading bookings";
         toast.error(message);
@@ -87,9 +112,8 @@ export default function DashboardPage() {
         setLoading(false);
       }
     }
-
     fetchBookings();
-  }, []);
+  }, [user?.id]);
 
   const cancelBooking = useCallback(async (id: string) => {
     try {

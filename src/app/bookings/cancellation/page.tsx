@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import toast from "react-hot-toast";
 import InputField from "@/components/InputField";
 import LoadingButton from "@/components/LoadingButton";
 import { ArrowLeft } from "lucide-react";
@@ -10,9 +9,13 @@ import LoadingScreen from "@/components/LoadingScreen";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { clearBooking, fetchBookingById } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
-import { Booking, rentalCompanies } from "@/types/booking";
+import { Booking } from "@/types/booking";
 import TimePicker from "@/components/TimePicker";
 import { fetchCurrentUser } from "@/app/store/slices/authSlice";
+import { RootState } from "@/app/store/store";
+import { addRentalCompany, fetchRentalCompanies } from "@/app/store/slices/rentalCompanySlice";
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
+
 
 export default function CancellationForm() {
     const router = useRouter();
@@ -22,10 +25,13 @@ export default function CancellationForm() {
     const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
     // ✅ Use Redux state instead of local state
     const { user } = useAppSelector((state) => state.auth);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExistingCustomer] = useState(!!id);
     const [cancellationFee, setCancellationFee] = useState("");
+    const { rentalCompanies } = useAppSelector(
+        (state: RootState) => state.rentalCompany
+    );
+
     const [form, setForm] = useState<Booking>({
         id: "",
         fullName: "",
@@ -53,14 +59,65 @@ export default function CancellationForm() {
         refundAmount: ""
     });
 
+    const [otherRentalCompany, setOtherRentalCompany] = useState("");
+    const { handleSuccessToast, handleErrorToast } = useToastHandler();
+
+    // console.log("otherRentalCompany =>", otherRentalCompany)
+    // console.log("rentalCompanies =>", rentalCompanies)
+
+    // Fetch rental companies on mount
+    useEffect(() => {
+        if (rentalCompanies && rentalCompanies.length !== 0) return
+
+        (
+            async () => {
+                try {
+                    dispatch(fetchRentalCompanies()).unwrap()
+                } catch (error) {
+                    handleErrorToast(
+                        error instanceof Error ? error.message : "Failed to fetch rental companies"
+                    )
+                }
+            }
+        )()
+
+    }, [dispatch, rentalCompanies, handleErrorToast]);
+
+    useEffect(() => {
+        if (form.rentalCompany === "Other") {
+
+            setOtherRentalCompany(form.rentalCompany);
+            setForm(prev => ({ ...prev, rentalCompany: "" }));
+        }
+    }, [form.rentalCompany]);
+
+    // Fetch booking data when component mounts or id changes
+    // useEffect(() => {
+    //     if (id) {
+    //         dispatch(fetchBookingById(id))
+    //             .unwrap()
+    //             .catch((err) => handleErrorToast(err.message || "Failed to fetch booking"));
+    //     }
+    // }, [id, dispatch, handleErrorToast]);
+
+
     // Fetch booking data when component mounts or id changes
     useEffect(() => {
-        if (id) {
-            dispatch(fetchBookingById(id))
-                .unwrap()
-                .catch((err) => toast.error(err.message || "Failed to fetch booking"));
+        if (!id) return
+        if (currentBooking?._id) return
+
+        (async () => {
+            try {
+                dispatch(fetchBookingById(id))
+                    .unwrap()
+            } catch (error) {
+                handleErrorToast(
+                    error instanceof Error ? error.message : "Failed to fetch booking"
+                );
+            }
         }
-    }, [id, dispatch]);
+        )()
+    }, [id, dispatch, router, handleErrorToast, currentBooking?._id]);
 
     // Update form when booking data is available
     useEffect(() => {
@@ -94,21 +151,35 @@ export default function CancellationForm() {
         }
     }, [currentBooking, id]);
 
-
     // Fetch current user using Redux thunk
     useEffect(() => {
-        if (user && !user.name) {
-            dispatch(fetchCurrentUser())
-                .unwrap()
-                .then((userData) => {
-                    setForm((prev) => ({ ...prev, salesAgent: userData.name }));
-                })
-                .catch((error) => {
-                    console.error("Failed to fetch user:", error);
-                    toast.error("Failed to load user information");
-                });
+        if (user?.id) return
+
+        (async () => {
+            try {
+                dispatch(fetchCurrentUser())
+                    .unwrap()
+                    .then((userData) => {
+                        setForm((prev) => ({ ...prev, salesAgent: userData.name }));
+                    })
+                    .catch((error) => {
+                        console.error("Failed to fetch user:", error);
+                        handleErrorToast("Failed to load user information");
+                    });
+            } catch (error) {
+                handleErrorToast(
+                    error instanceof Error ? error.message : "Failed to load booking details"
+                );
+            }
+        })()
+
+    }, [dispatch, handleErrorToast,user?.id]);
+
+    useEffect(() => {
+        if (user?.id) {
+            setForm((prev) => ({ ...prev, salesAgent: user.name }));
         }
-    }, [dispatch, user]);
+    }, [])
 
     // ✅ Calculate refund and update MCO with cancellation fee
     const calculateRefund = () => {
@@ -144,6 +215,39 @@ export default function CancellationForm() {
         setIsSubmitting(true);
 
         try {
+
+            const companyName = form.rentalCompany.trim();
+            if (!companyName) {
+                handleErrorToast("Please enter or select a rental company.");
+                return;
+            }
+
+
+            // 1️⃣ Check if company already exists in Redux store
+            const companyExists = rentalCompanies.some((rc) => rc.name.toLowerCase() === companyName.toLowerCase());
+
+            // 2️⃣ If it exists, proceed. If it's "Other", set flag to show input field
+            if (companyExists && otherRentalCompany === "Other") {
+                handleErrorToast("This rental company already exists. Please select it or choose 'Other'.");
+                setForm(prev => ({ ...prev, rentalCompany: "" }));
+                setOtherRentalCompany("");
+                return;
+            }
+
+            // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
+            if (!companyExists && otherRentalCompany === "Other") {
+                const result = await dispatch(addRentalCompany({ name: companyName }));
+               
+                if (addRentalCompany.rejected.match(result)) {
+                    handleErrorToast(result?.payload || "Failed to add rental company");
+                    setOtherRentalCompany(""); // reset
+                    return;
+                }
+                handleSuccessToast(`Added new company: ${companyName}`);
+                await dispatch(fetchRentalCompanies()); // refresh list
+            }
+
+
             // Prepare data for API
             const requestData = {
                 bookingId: isExistingCustomer ? form.id : undefined,
@@ -173,7 +277,7 @@ export default function CancellationForm() {
                     dateOfBirth: form.dateOfBirth
                 })
             };
-            console.log("requestData =>", requestData)
+
             const response = await fetch("/api/bookings/cancel", {
                 method: "POST",
                 headers: {
@@ -187,14 +291,13 @@ export default function CancellationForm() {
             if (!response.ok) {
                 throw new Error(data.error || "Failed to process cancellation");
             }
-            toast.success("Reservation cancelled successfully!");
             router.push("/dashboard");
+            handleSuccessToast("Reservation cancelled successfully!");
         } catch (err: unknown) {
-            console.error("Cancellation error:", err);
             if (err instanceof Error) {
-                toast.error(err.message);
+                handleErrorToast(err.message);
             } else {
-                toast.error("Failed to cancel reservation");
+                handleErrorToast("Failed to cancel reservation");
             }
         } finally {
             setIsSubmitting(false);
@@ -286,26 +389,40 @@ export default function CancellationForm() {
                         {/* Row 1: Rental Company & Confirmation Number */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Rental Company
-                                </label>
-                                <select
-                                    name="rentalCompany"
-                                    value={form.rentalCompany}
-                                    onChange={handleChange}
-                                    className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
-                                    required
-                                    disabled={isExistingCustomer}
-                                >
-                                    <option value="">Select a company</option>
-                                    {rentalCompanies.map((company) => (
-                                        <option key={company} value={company}>
-                                            {company}
-                                        </option>
-                                    ))}
-                                </select>
+                                {
+                                    otherRentalCompany === "Other" || rentalCompanies.length === 0 ? (
+                                        <InputField
+                                            label="Rental Company"
+                                            name="rentalCompany"
+                                            value={form.rentalCompany}
+                                            onChange={handleChange}
+                                            placeholder="Enter Rental Company"
+                                            required
+                                        />
+                                    ) : (
+                                        <>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Rental Company
+                                            </label>
+                                            <select
+                                                name="rentalCompany"
+                                                value={form.rentalCompany}
+                                                onChange={handleChange}
+                                                className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                                                required
+                                                disabled={isExistingCustomer}
+                                            >
+                                                <option value="">Select a company</option>
+                                                {rentalCompanies.map((company) => (
+                                                    <option key={company._id} value={company.name}>
+                                                        {company.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </>
+                                    )
+                                }
                             </div>
-
                             <InputField
                                 label="Confirmation Number/Rental Agreement"
                                 name="confirmationNumber"

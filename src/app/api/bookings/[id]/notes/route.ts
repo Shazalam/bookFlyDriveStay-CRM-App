@@ -11,7 +11,6 @@ export async function POST(
 ) {
     try {
         await connectDB();
-        console.log("notes post")
         const { id } = await context.params;
         const { text } = await req.json();
 
@@ -39,7 +38,6 @@ export async function POST(
 
         return apiResponse({ success: true, booking }, 200);
     } catch (err: unknown) {
-        console.error("POST /bookings/:id/notes error:", err);
         const message = err instanceof Error ? err.message : "Server error";
         return apiResponse({ error: message }, 500);
     }

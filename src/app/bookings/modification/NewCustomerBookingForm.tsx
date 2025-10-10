@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import InputField from "@/components/InputField";
 import VehicleSelector from "@/components/VehicleSelector";
 import LoadingButton from "@/components/LoadingButton";
@@ -13,7 +12,10 @@ import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { saveBooking, resetOperationStatus } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
 import FieldSelectionPanel from "@/components/FieldSelectionPanel";
-import { Booking, rentalCompanies, TimelineChange, TimelineEntry } from "@/types/booking";
+import { Booking, TimelineChange, TimelineEntry } from "@/types/booking";
+import { addRentalCompany, fetchRentalCompanies } from "@/app/store/slices/rentalCompanySlice";
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
+import { RootState } from "@/app/store/store";
 
 const createEditableGroups = {
   Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],
@@ -69,6 +71,26 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
   );
 
   const [newModificationFee, setNewModificationFee] = useState("");
+  const { rentalCompanies } = useAppSelector(
+    (state: RootState) => state.rentalCompany
+  );
+  const [otherRentalCompany, setOtherRentalCompany] = useState("");
+  const { handleSuccessToast, handleErrorToast } = useToastHandler();
+
+
+  // Fetch rental companies on mount
+  useEffect(() => {
+    dispatch(fetchRentalCompanies());
+  }, [dispatch]);
+
+
+  useEffect(() => {
+    if (form.rentalCompany === "Other") {
+      setOtherRentalCompany(form.rentalCompany);
+      setForm(prev => ({ ...prev, rentalCompany: "" }));
+    }
+  }, [form.rentalCompany]);
+
 
   // Fetch logged-in agent
   useEffect(() => {
@@ -169,96 +191,131 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formData: Partial<Booking> = { ...form };
-    const changes: TimelineChange[] = [];
+    try {
 
-    // Map raw fields to human-readable labels
-    const fieldLabels: Record<string, string> = {
-      pickupLocation: "Pickup Location",
-      dropoffLocation: "Dropoff Location",
-      pickupDate: "Pickup Date",
-      dropoffDate: "Dropoff Date",
-      pickupTime: "Pickup Time",
-      dropoffTime: "Dropoff Time",
-      fullName: "Full Name",
-      email: "Email",
-      phoneNumber: "Phone Number",
-      rentalCompany: "Rental Company",
-      confirmationNumber: "Confirmation Number",
-      vehicleImage: "Vehicle Image",
-      total: "Total",
-      mco: "MCO",
-      payableAtPickup: "Payable at Pickup",
-      cardLast4: "Card Last 4 Digits",
-      expiration: "Expiration",
-      billingAddress: "Billing Address",
-      status: "Status",
-      dateOfBirth: "Date of Birth"
-    };
-
-    // Helper to format time in 12-hour format
-    const formatTime = (time: string | null | undefined) => {
-      if (!time) return "";
-      const [hourStr, minuteStr] = time.split(":");
-      let hour = parseInt(hourStr, 10);
-      const minute = minuteStr ?? "00";
-      const ampm = hour >= 12 ? "PM" : "AM";
-      hour = hour % 12 || 12;
-      return `${hour}:${minute} ${ampm}`;
-    };
-
-    // Collect only selected fields
-    Object.keys(editable).forEach((field) => {
-      if (editable[field]) {
-        let newValue = form[field as keyof Booking];
-
-        // Format time fields
-        if (["pickupTime", "dropoffTime"].includes(field)) {
-          newValue = newValue ? formatTime(newValue as string) : "";
-        }
-
-        if (newValue !== undefined && newValue !== null && newValue !== "") {
-          changes.push({
-            text: `Change in ${fieldLabels[field] || field}: to "${newValue}"`
-          });
-        }
+      const companyName = form.rentalCompany.trim();
+      if (!companyName) {
+        handleErrorToast("Please enter or select a rental company.");
+        return;
       }
-    });
 
-    if (changes.length === 0) {
-      toast.error("No fields selected. Please select at least one to log in timeline.");
+
+      // 1️⃣ Check if company already exists in Redux store
+      const companyExists = rentalCompanies.some((rc) => rc.name.toLowerCase() === companyName.toLowerCase());
+
+      // 2️⃣ If it exists, proceed. If it's "Other", set flag to show input field
+      if (companyExists && otherRentalCompany === "Other") {
+        handleErrorToast("This rental company already exists. Please select it or choose 'Other'.");
+        setForm(prev => ({ ...prev, rentalCompany: "" }));
+        setOtherRentalCompany("");
+        return;
+      }
+
+      // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
+      if (!companyExists && otherRentalCompany === "Other") {
+        const result = await dispatch(addRentalCompany({ name: companyName }));
+        if (addRentalCompany.rejected.match(result)) {
+          handleErrorToast(result?.payload || "Failed to add rental company");
+          setOtherRentalCompany(""); // reset
+          return;
+        }
+        handleSuccessToast(`Added new company: ${companyName}`);
+        await dispatch(fetchRentalCompanies()); // refresh list
+      }
+      // Now proceed to save booking
+      const formData: Partial<Booking> = { ...form };
+      const changes: TimelineChange[] = [];
+
+      // Map raw fields to human-readable labels
+      const fieldLabels: Record<string, string> = {
+        pickupLocation: "Pickup Location",
+        dropoffLocation: "Dropoff Location",
+        pickupDate: "Pickup Date",
+        dropoffDate: "Dropoff Date",
+        pickupTime: "Pickup Time",
+        dropoffTime: "Dropoff Time",
+        fullName: "Full Name",
+        email: "Email",
+        phoneNumber: "Phone Number",
+        rentalCompany: "Rental Company",
+        confirmationNumber: "Confirmation Number",
+        vehicleImage: "Vehicle Image",
+        total: "Total",
+        mco: "MCO",
+        payableAtPickup: "Payable at Pickup",
+        cardLast4: "Card Last 4 Digits",
+        expiration: "Expiration",
+        billingAddress: "Billing Address",
+        status: "Status",
+        dateOfBirth: "Date of Birth"
+      };
+
+      // Helper to format time in 12-hour format
+      const formatTime = (time: string | null | undefined) => {
+        if (!time) return "";
+        const [hourStr, minuteStr] = time.split(":");
+        let hour = parseInt(hourStr, 10);
+        const minute = minuteStr ?? "00";
+        const ampm = hour >= 12 ? "PM" : "AM";
+        hour = hour % 12 || 12;
+        return `${hour}:${minute} ${ampm}`;
+      };
+
+      // Collect only selected fields
+      Object.keys(editable).forEach((field) => {
+        if (editable[field]) {
+          let newValue = form[field as keyof Booking];
+
+          // Format time fields
+          if (["pickupTime", "dropoffTime"].includes(field)) {
+            newValue = newValue ? formatTime(newValue as string) : "";
+          }
+
+          if (newValue !== undefined && newValue !== null && newValue !== "") {
+            changes.push({
+              text: `Change in ${fieldLabels[field] || field}: to "${newValue}"`
+            });
+          }
+        }
+      });
+
+      if (changes.length === 0) {
+        handleErrorToast("No fields selected. Please select at least one to log in timeline.");
+        return;
+      }
+
+      const timelineEntry: TimelineEntry = {
+        date: new Date().toISOString(),
+        message: `New modification booking created with ${changes.length} selected field(s)`,
+        agentName: form.salesAgent,
+        changes,
+      };
+
+      formData.timeline = [timelineEntry]; // ✅ no more `any`
+
+      await dispatch(saveBooking({
+        formData,
+        id: id || undefined,
+      }));
+
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Network error";
+      handleErrorToast(`Error: ${errorMessage}. Please try again.`);
       return;
     }
-
-    const timelineEntry: TimelineEntry = {
-      date: new Date().toISOString(),
-      message: `New modification booking created with ${changes.length} selected field(s)`,
-      agentName: form.salesAgent,
-      changes,
-    };
-
-    formData.timeline = [timelineEntry]; // ✅ no more `any`
-
-    console.log("formData =>", formData);
-
-    await dispatch(saveBooking({
-      formData,
-      id: id || undefined,
-    }));
   };
-
-
 
   useEffect(() => {
     if (operation === "succeeded") {
-      toast.success("Booking created successfully!");
+      handleSuccessToast("Booking created successfully!");
       router.push("/dashboard");
       dispatch(resetOperationStatus());
     } else if (operation === "failed") {
-      toast.error(error || "Failed to create booking");
+      handleErrorToast(error || "Failed to create booking");
       dispatch(resetOperationStatus());
     }
-  }, [operation, error, router, dispatch]);
+  }, [operation, error, router, dispatch, handleSuccessToast, handleErrorToast]);
 
   if (loading) return <LoadingScreen />;
   if (error)
@@ -312,7 +369,55 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
           {/* Booking details */}
           <section>
             <h2 className="text-lg font-semibold text-indigo-700 mb-4 border-b pb-2">📅 Booking Details</h2>
+
+            {/* Row 1: Rental Company & Confirmation Number */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                {
+                  otherRentalCompany === "Other" || rentalCompanies.length === 0 ? (
+                    <InputField
+                      label="Rental Company"
+                      name="rentalCompany"
+                      value={form.rentalCompany}
+                      onChange={handleChange}
+                      placeholder="Enter Rental Company"
+                      required
+                    />
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Rental Company
+                      </label>
+                      <select
+                        name="rentalCompany"
+                        value={form.rentalCompany}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
+                        required
+                      >
+                        <option value="">Select a company</option>
+                        {rentalCompanies.map((company) => (
+                          <option key={company._id} value={company.name}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )
+                }
+              </div>
+
+              <InputField
+                label="Confirmation Number"
+                name="confirmationNumber"
+                value={form.confirmationNumber}
+                onChange={handleChange}
+                placeholder="Enter Confirmation Number"
+                required
+              />
+            </div>
+
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rental Company</label>
                 <select
@@ -337,7 +442,7 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
                 onChange={handleChange}
                 required
               />
-            </div>
+            </div> */}
 
             <VehicleSelector value={form.vehicleImage} onChange={(url) => setForm((prev) => ({ ...prev, vehicleImage: url }))} />
 
