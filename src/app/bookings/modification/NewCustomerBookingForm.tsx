@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { saveBooking, resetOperationStatus } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
 import FieldSelectionPanel from "@/components/FieldSelectionPanel";
-import { Booking, rentalCompanies, TimelineChange, TimelineEntry } from "@/types/booking";
+import { Booking, TimelineChange, TimelineEntry } from "@/types/booking";
 import { addRentalCompany, fetchRentalCompanies } from "@/app/store/slices/rentalCompanySlice";
 import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 import { RootState } from "@/app/store/store";
@@ -211,11 +211,9 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
         return;
       }
 
-      console.log("otherRentalCompany:", otherRentalCompany);
       // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
       if (!companyExists && otherRentalCompany === "Other") {
         const result = await dispatch(addRentalCompany({ name: companyName }));
-        console.log("New company added:", result);
         if (addRentalCompany.rejected.match(result)) {
           handleErrorToast(result?.payload || "Failed to add rental company");
           setOtherRentalCompany(""); // reset
@@ -295,8 +293,6 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
 
       formData.timeline = [timelineEntry]; // ✅ no more `any`
 
-      console.log("formData =>", formData);
-
       await dispatch(saveBooking({
         formData,
         id: id || undefined,
@@ -304,12 +300,11 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
 
 
     } catch (error) {
-      handleErrorToast("An unexpected error occurred. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Network error";
+      handleErrorToast(`Error: ${errorMessage}. Please try again.`);
       return;
     }
   };
-
-
 
   useEffect(() => {
     if (operation === "succeeded") {
@@ -320,7 +315,7 @@ export default function NewCustomerBookingForm({ id }: NewCustomerBookingFormPro
       handleErrorToast(error || "Failed to create booking");
       dispatch(resetOperationStatus());
     }
-  }, [operation, error, router, dispatch]);
+  }, [operation, error, router, dispatch, handleSuccessToast, handleErrorToast]);
 
   if (loading) return <LoadingScreen />;
   if (error)

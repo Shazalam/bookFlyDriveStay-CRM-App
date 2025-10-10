@@ -39,8 +39,6 @@ export interface BookingTemplateData {
 
 export const cancellationTemplate = (data: BookingTemplateData) => {
 
-  console.log("cancelled Template =>", data)
-
   const html = `
   <div style="margin:0;padding:0;background:#f5f7fb;">
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f5f7fb;">

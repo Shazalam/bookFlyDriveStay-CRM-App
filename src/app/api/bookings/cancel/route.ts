@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { bookingId, customerType, refundAmount, mco, ...rest } = body;
 
-    console.log("cancellation route =>", body)
     let booking;
 
     if (customerType === "existing" && bookingId) {
@@ -132,7 +131,6 @@ export async function POST(req: NextRequest) {
 
     return apiResponse({ success: true, booking }, 200);
   } catch (err: unknown) {
-    console.error("POST /cancel error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
   }

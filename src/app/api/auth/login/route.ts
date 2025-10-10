@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   }
 
   const isMatch = await comparePassword(password, agent.password);
-  console.log("isMatch  =>",isMatch)
+
   if (!isMatch) {
     return apiResponse({ error: "Invalid credentials" },401);
   }

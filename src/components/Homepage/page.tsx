@@ -15,8 +15,7 @@ import Footer from './layout/footer';
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
-
-  console.log("Rendering HomePage component");
+  
   useEffect(() => {
     setMounted(true);
   }, []);

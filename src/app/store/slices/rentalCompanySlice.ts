@@ -1,3 +1,4 @@
+import { handleAxiosError } from "@/lib/utils/handleAxiosError";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 
@@ -35,8 +36,8 @@ export const fetchRentalCompanies = createAsyncThunk<
             }
             return data.data;
 
-        } catch (error: any) {
-            return rejectWithValue(error.response?.data?.message|| "Failed to fetch rental companies");
+        } catch (error) {
+            return rejectWithValue(handleAxiosError(error,"Failed to fetch rental companies"));
         }
     }
 );
@@ -54,8 +55,8 @@ export const addRentalCompany = createAsyncThunk<
     }
     
     return data.data;
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || "Failed to add company");
+  } catch (err) {
+    return rejectWithValue(handleAxiosError(err, "Failed to add company"));
   }
 });
 
@@ -86,7 +87,6 @@ const rentalCompanySlice = createSlice({
         state.error = null;
       })
       .addCase(addRentalCompany.fulfilled, (state, action: PayloadAction<RentalCompany>) => {
-        console.log("New company added:", action.payload);
         state.loading = false;
         state.rentalCompanies.push(action.payload);
       })

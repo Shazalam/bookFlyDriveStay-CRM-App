@@ -25,7 +25,7 @@ export default function NewBookingPage() {
         (state: RootState) => state.rentalCompany
     );
     const [otherRentalCompany, setOtherRentalCompany] = useState("");
-    const { handleSuccess, handleError } = useToastHandler();
+    const { handleSuccessToast, handleErrorToast } = useToastHandler();
 
     const [form, setForm] = useState({
         fullName: "",
@@ -64,11 +64,53 @@ export default function NewBookingPage() {
 
     // Fetch booking data if ID is present in URL
     useEffect(() => {
-        if (id) {
-            setIsEditing(true);
-            fetchBookingData(id);
-        }
-    }, [id]);
+        if (!id) return
+        setIsEditing(true);
+
+        async function fetchBookingData() {
+            try {
+                setLoading(true);
+                const res = await fetch(`/api/bookings/${id}`, {
+                    credentials: "include",
+                });
+
+                if (!res.ok) throw new Error("Failed to fetch booking");
+
+                const data = await res.json();
+                const booking = data.booking;
+
+                // Pre-fill form with existing booking data
+                setForm({
+                    fullName: booking.fullName || "",
+                    email: booking.email || "",
+                    phoneNumber: booking.phoneNumber || "",
+                    rentalCompany: booking.rentalCompany || "",
+                    confirmationNumber: booking.confirmationNumber || "",
+                    vehicleImage: booking.vehicleImage || "",
+                    total: booking.total?.toString() || "",
+                    mco: booking.mco?.toString() || "",
+                    payableAtPickup: booking.payableAtPickup?.toString() || "",
+                    pickupDate: booking.pickupDate || "",
+                    dropoffDate: booking.dropoffDate || "",
+                    pickupTime: booking.pickupTime || "",
+                    dropoffTime: booking.dropoffTime || "",
+                    pickupLocation: booking.pickupLocation || "",
+                    dropoffLocation: booking.dropoffLocation || "",
+                    cardLast4: booking.cardLast4 || "",
+                    expiration: booking.expiration || "",
+                    billingAddress: booking.billingAddress || "",
+                    salesAgent: booking.salesAgent || "",
+                    status: booking?.status || "BOOKED"
+                });
+            } catch (error) {
+                console.error("Error fetching booking:", error);
+                handleErrorToast("Failed to load booking data");
+            } finally {
+                setLoading(false);
+            }
+        }   
+        fetchBookingData()
+    }, [id, handleErrorToast]);
 
     // Fetch logged-in agent
     useEffect(() => {
@@ -108,48 +150,49 @@ export default function NewBookingPage() {
         }
     }, [form.pickupDate]);
 
-    async function fetchBookingData(bookingId: string) {
-        try {
-            setLoading(true);
-            const res = await fetch(`/api/bookings/${bookingId}`, {
-                credentials: "include",
-            });
+    //     const fetchBookingData = useCallback( async(bookingId: string) {
+    //         try {
+    //             setLoading(true);
+    //             const res = await fetch(`/api/bookings/${bookingId}`, {
+    //                 credentials: "include",
+    //             });
 
-            if (!res.ok) throw new Error("Failed to fetch booking");
+    //             if (!res.ok) throw new Error("Failed to fetch booking");
 
-            const data = await res.json();
-            const booking = data.booking;
+    //             const data = await res.json();
+    //             const booking = data.booking;
 
-            // Pre-fill form with existing booking data
-            setForm({
-                fullName: booking.fullName || "",
-                email: booking.email || "",
-                phoneNumber: booking.phoneNumber || "",
-                rentalCompany: booking.rentalCompany || "",
-                confirmationNumber: booking.confirmationNumber || "",
-                vehicleImage: booking.vehicleImage || "",
-                total: booking.total?.toString() || "",
-                mco: booking.mco?.toString() || "",
-                payableAtPickup: booking.payableAtPickup?.toString() || "",
-                pickupDate: booking.pickupDate || "",
-                dropoffDate: booking.dropoffDate || "",
-                pickupTime: booking.pickupTime || "",
-                dropoffTime: booking.dropoffTime || "",
-                pickupLocation: booking.pickupLocation || "",
-                dropoffLocation: booking.dropoffLocation || "",
-                cardLast4: booking.cardLast4 || "",
-                expiration: booking.expiration || "",
-                billingAddress: booking.billingAddress || "",
-                salesAgent: booking.salesAgent || "",
-                status: booking?.status || "BOOKED"
-            });
-        } catch (error) {
-            console.error("Error fetching booking:", error);
-            handleError("Failed to load booking data");
-        } finally {
-            setLoading(false);
-        }
-    }
+    //             // Pre-fill form with existing booking data
+    //             setForm({
+    //                 fullName: booking.fullName || "",
+    //                 email: booking.email || "",
+    //                 phoneNumber: booking.phoneNumber || "",
+    //                 rentalCompany: booking.rentalCompany || "",
+    //                 confirmationNumber: booking.confirmationNumber || "",
+    //                 vehicleImage: booking.vehicleImage || "",
+    //                 total: booking.total?.toString() || "",
+    //                 mco: booking.mco?.toString() || "",
+    //                 payableAtPickup: booking.payableAtPickup?.toString() || "",
+    //                 pickupDate: booking.pickupDate || "",
+    //                 dropoffDate: booking.dropoffDate || "",
+    //                 pickupTime: booking.pickupTime || "",
+    //                 dropoffTime: booking.dropoffTime || "",
+    //                 pickupLocation: booking.pickupLocation || "",
+    //                 dropoffLocation: booking.dropoffLocation || "",
+    //                 cardLast4: booking.cardLast4 || "",
+    //                 expiration: booking.expiration || "",
+    //                 billingAddress: booking.billingAddress || "",
+    //                 salesAgent: booking.salesAgent || "",
+    //                 status: booking?.status || "BOOKED"
+    //             });
+    //         } catch (error) {
+    //             console.error("Error fetching booking:", error);
+    //             handleErrorToast("Failed to load booking data");
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     }
+    // )
 
     function handleChange(
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -164,7 +207,7 @@ export default function NewBookingPage() {
         try {
             const companyName = form.rentalCompany.trim();
             if (!companyName) {
-                handleError("Please enter or select a rental company.");
+                handleErrorToast("Please enter or select a rental company.");
                 setLoading(false);
                 return;
             }
@@ -175,25 +218,23 @@ export default function NewBookingPage() {
 
             // 2️⃣ If it exists, proceed. If it's "Other", set flag to show input field
             if (companyExists && otherRentalCompany === "Other") {
-                handleError("This rental company already exists. Please select it or choose 'Other'.");
+                handleErrorToast("This rental company already exists. Please select it or choose 'Other'.");
                 setForm(prev => ({ ...prev, rentalCompany: "" }));
                 setOtherRentalCompany("");
                 setLoading(false);
                 return;
             }
 
-            console.log("otherRentalCompany:", otherRentalCompany);
             // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
             if (!companyExists && otherRentalCompany === "Other") {
                 const result = await dispatch(addRentalCompany({ name: companyName }));
-                console.log("New company added:", result);
                 if (addRentalCompany.rejected.match(result)) {
-                    handleError(result?.payload || "Failed to add rental company");
+                    handleErrorToast(result?.payload || "Failed to add rental company");
                     setLoading(false);
                     setOtherRentalCompany(""); // reset
                     return;
                 }
-                handleSuccess(`Added new company: ${companyName}`);
+                handleSuccessToast(`Added new company: ${companyName}`);
                 await dispatch(fetchRentalCompanies()); // refresh list
             }
 
@@ -218,14 +259,14 @@ export default function NewBookingPage() {
             const data = await res.json();
 
             if (res.ok) {
-                handleSuccess(`Booking ${isEditing ? 'updated' : 'created'} successfully!`);
+                handleSuccessToast(`Booking ${isEditing ? 'updated' : 'created'} successfully!`);
                 router.push("/dashboard");
             } else {
-                handleError(data.error || "Something went wrong");
+                handleErrorToast(data.error || "Something went wrong");
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Network error";
-            handleError(`Error: ${errorMessage}. Please try again.`);
+            handleErrorToast(`Error: ${errorMessage}. Please try again.`);
         } finally {
             setLoading(false);
         }

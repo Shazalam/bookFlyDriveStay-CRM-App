@@ -41,7 +41,6 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
   const [otherRentalCompany, setOtherRentalCompany] = useState("");
   const { handleSuccessToast, handleErrorToast } = useToastHandler();
 
-
   // Fetch rental companies on mount
   useEffect(() => {
     dispatch(fetchRentalCompanies());
@@ -57,14 +56,21 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
 
   // Fetch booking data when component mounts or id changes
   useEffect(() => {
-    if (id) {
-      dispatch(fetchBookingById(id))
-        .unwrap()
-        .catch((err) => handleErrorToast(err.message || "Failed to fetch booking"));
-    }
-  }, [id, dispatch, router]);
+    if (!id) return
+    if (currentBooking?._id) return
 
-  console.log("currentBooking =>", currentBooking)
+    (async () => {
+      try {
+        dispatch(fetchBookingById(id))
+          .unwrap()
+      } catch (error) {
+        handleErrorToast(
+          error instanceof Error ? error.message : "Failed to fetch booking"
+        );
+      }
+    }
+    )()
+  }, [id, dispatch, router, handleErrorToast, currentBooking?._id]);
 
   // Update form when booking data is available
   useEffect(() => {
@@ -201,11 +207,9 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
         return;
       }
 
-      console.log("otherRentalCompany:", otherRentalCompany);
       // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
       if (!companyExists && otherRentalCompany === "Other") {
         const result = await dispatch(addRentalCompany({ name: companyName }));
-        console.log("New company added:", result);
         if (addRentalCompany.rejected.match(result)) {
           handleErrorToast(result?.payload || "Failed to add rental company");
           setOtherRentalCompany(""); // reset
@@ -256,10 +260,12 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
         formData,
         id: id || undefined,
       }));
+      router.push("/dashboard");
       setNewModificationFee("");
 
     } catch (error) {
-      handleErrorToast("An unexpected error occurred. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Network error";
+      handleErrorToast(`Error: ${errorMessage}. Please try again.`);
       return;
     }
 
@@ -275,7 +281,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
       handleErrorToast(error || "Failed to update booking");
       dispatch(resetOperationStatus());
     }
-  }, [operation, error, router, dispatch, id]);
+  }, [operation, error, router, dispatch, id, handleSuccessToast, handleErrorToast]);
 
   if (error) {
     return (
@@ -286,7 +292,6 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
       />
     )
   }
-
   if (loading) return <LoadingScreen />;
 
   if (!currentBooking && id) return <LoadingScreen />;

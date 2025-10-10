@@ -9,7 +9,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { clearBooking, fetchBookingById } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
-import { Booking, rentalCompanies } from "@/types/booking";
+import { Booking } from "@/types/booking";
 import TimePicker from "@/components/TimePicker";
 import { fetchCurrentUser } from "@/app/store/slices/authSlice";
 import { RootState } from "@/app/store/store";
@@ -25,7 +25,6 @@ export default function CancellationForm() {
     const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
     // ✅ Use Redux state instead of local state
     const { user } = useAppSelector((state) => state.auth);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExistingCustomer] = useState(!!id);
     const [cancellationFee, setCancellationFee] = useState("");
@@ -63,23 +62,26 @@ export default function CancellationForm() {
     const [otherRentalCompany, setOtherRentalCompany] = useState("");
     const { handleSuccessToast, handleErrorToast } = useToastHandler();
 
+    // console.log("otherRentalCompany =>", otherRentalCompany)
+    // console.log("rentalCompanies =>", rentalCompanies)
+
     // Fetch rental companies on mount
     useEffect(() => {
-        dispatch(fetchRentalCompanies());
-    }, [dispatch]);
+        if (rentalCompanies && rentalCompanies.length !== 0) return
 
+        (
+            async () => {
+                try {
+                    dispatch(fetchRentalCompanies()).unwrap()
+                } catch (error) {
+                    handleErrorToast(
+                        error instanceof Error ? error.message : "Failed to fetch rental companies"
+                    )
+                }
+            }
+        )()
 
-    useEffect(() => {
-        if (form.rentalCompany === "Other") {
-            setOtherRentalCompany(form.rentalCompany);
-            setForm(prev => ({ ...prev, rentalCompany: "" }));
-        }
-    }, [form.rentalCompany]);
-    
-    // Fetch rental companies on mount
-    useEffect(() => {
-        dispatch(fetchRentalCompanies());
-    }, [dispatch]);
+    }, [dispatch, rentalCompanies, handleErrorToast]);
 
     useEffect(() => {
         if (form.rentalCompany === "Other") {
@@ -90,13 +92,32 @@ export default function CancellationForm() {
     }, [form.rentalCompany]);
 
     // Fetch booking data when component mounts or id changes
+    // useEffect(() => {
+    //     if (id) {
+    //         dispatch(fetchBookingById(id))
+    //             .unwrap()
+    //             .catch((err) => handleErrorToast(err.message || "Failed to fetch booking"));
+    //     }
+    // }, [id, dispatch, handleErrorToast]);
+
+
+    // Fetch booking data when component mounts or id changes
     useEffect(() => {
-        if (id) {
-            dispatch(fetchBookingById(id))
-                .unwrap()
-                .catch((err) => handleErrorToast(err.message || "Failed to fetch booking"));
+        if (!id) return
+        if (currentBooking?._id) return
+
+        (async () => {
+            try {
+                dispatch(fetchBookingById(id))
+                    .unwrap()
+            } catch (error) {
+                handleErrorToast(
+                    error instanceof Error ? error.message : "Failed to fetch booking"
+                );
+            }
         }
-    }, [id, dispatch]);
+        )()
+    }, [id, dispatch, router, handleErrorToast, currentBooking?._id]);
 
     // Update form when booking data is available
     useEffect(() => {
@@ -130,24 +151,35 @@ export default function CancellationForm() {
         }
     }, [currentBooking, id]);
 
-
     // Fetch current user using Redux thunk
     useEffect(() => {
-        if (!user) {
-            dispatch(fetchCurrentUser())
-                .unwrap()
-                .then((userData) => {
-                    setForm((prev) => ({ ...prev, salesAgent: userData.name }));
-                })
-                .catch((error) => {
-                    console.error("Failed to fetch user:", error);
-                    handleErrorToast("Failed to load user information");
-                });
-        } else {
+        if (user?.id) return
+
+        (async () => {
+            try {
+                dispatch(fetchCurrentUser())
+                    .unwrap()
+                    .then((userData) => {
+                        setForm((prev) => ({ ...prev, salesAgent: userData.name }));
+                    })
+                    .catch((error) => {
+                        console.error("Failed to fetch user:", error);
+                        handleErrorToast("Failed to load user information");
+                    });
+            } catch (error) {
+                handleErrorToast(
+                    error instanceof Error ? error.message : "Failed to load booking details"
+                );
+            }
+        })()
+
+    }, [dispatch, handleErrorToast,user?.id]);
+
+    useEffect(() => {
+        if (user?.id) {
             setForm((prev) => ({ ...prev, salesAgent: user.name }));
         }
-    }, [dispatch, user]);
-
+    }, [])
 
     // ✅ Calculate refund and update MCO with cancellation fee
     const calculateRefund = () => {
@@ -202,11 +234,10 @@ export default function CancellationForm() {
                 return;
             }
 
-            console.log("otherRentalCompany:", otherRentalCompany);
             // 3️⃣ If company doesn’t exist & isn’t 'Other', add it to MongoDB
             if (!companyExists && otherRentalCompany === "Other") {
                 const result = await dispatch(addRentalCompany({ name: companyName }));
-                console.log("New company added:", result);
+               
                 if (addRentalCompany.rejected.match(result)) {
                     handleErrorToast(result?.payload || "Failed to add rental company");
                     setOtherRentalCompany(""); // reset
@@ -260,10 +291,9 @@ export default function CancellationForm() {
             if (!response.ok) {
                 throw new Error(data.error || "Failed to process cancellation");
             }
-            handleSuccessToast("Reservation cancelled successfully!");
             router.push("/dashboard");
+            handleSuccessToast("Reservation cancelled successfully!");
         } catch (err: unknown) {
-            console.error("Cancellation error:", err);
             if (err instanceof Error) {
                 handleErrorToast(err.message);
             } else {
@@ -359,7 +389,6 @@ export default function CancellationForm() {
                         {/* Row 1: Rental Company & Confirmation Number */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
-
                                 {
                                     otherRentalCompany === "Other" || rentalCompanies.length === 0 ? (
                                         <InputField
@@ -381,6 +410,7 @@ export default function CancellationForm() {
                                                 onChange={handleChange}
                                                 className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition hover:border-indigo-400"
                                                 required
+                                                disabled={isExistingCustomer}
                                             >
                                                 <option value="">Select a company</option>
                                                 {rentalCompanies.map((company) => (

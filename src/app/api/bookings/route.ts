@@ -16,7 +16,6 @@ export async function GET(req: Request) {
     const bookings = await Booking.find().sort({ createdAt: -1 });
     return apiResponse({ success: true, bookings });
   } catch (err: unknown) {
-    console.error("GET /bookings error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
   }
@@ -49,7 +48,6 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
-    console.log("📥 Incoming Booking Data =>", data);
 
     // ✅ Check required fields manually
     const missing = REQUIRED_FIELDS.filter(
@@ -104,11 +102,9 @@ export async function POST(req: Request) {
 
     // ✅ Save booking
     const booking = await Booking.create(payload);
-    console.log("✅ Booking Saved:", booking);
 
     return apiResponse({ success: true, booking }, 201);
   } catch (err: unknown) {
-    console.error("POST /bookings error:", err);
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ error: message }, 500);
   }

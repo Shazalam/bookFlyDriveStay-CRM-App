@@ -24,14 +24,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     if (user) return; // already have user
     dispatch(fetchCurrentUser())
       .unwrap()
-      .catch((error) => {
-        console.error("Failed to fetch user:", error);
-        toast.error("Failed to load user information");
-      });
   }, [dispatch, user]);
 
   const handleLogout = useCallback(async () => {
-    console.log("handleLogout");
     setLoading(true);
 
     const toastId = toast.loading("Signing out...");

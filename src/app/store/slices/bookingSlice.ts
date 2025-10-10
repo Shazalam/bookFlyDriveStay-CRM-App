@@ -100,7 +100,6 @@ export const saveBooking = createAsyncThunk<
     const method = id ? "PUT" : "POST";
     const url = id ? `/api/bookings/${id}` : "/api/bookings";
 
-    console.log("saveBooking =>", url, id)
     // For updates, remove _id from the data
     const dataToSend = id ?
       Object.fromEntries(Object.entries(formData).filter(([key]) => key !== '_id')) :
@@ -245,7 +244,6 @@ const bookingSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchBookings.fulfilled, (state, action: PayloadAction<Booking[]>) => {
-        console.log("fetchBookings =>", action.payload)
         state.bookingsList = action.payload;
         state.listLoading = false;
       })
