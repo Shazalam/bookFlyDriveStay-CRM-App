@@ -28,6 +28,7 @@ export default function NewBookingPage() {
     const { handleSuccessToast, handleErrorToast } = useToastHandler();
 
     const [form, setForm] = useState({
+        _id:"",
         fullName: "",
         email: "",
         phoneNumber: "",
@@ -65,6 +66,8 @@ export default function NewBookingPage() {
     // Fetch booking data if ID is present in URL
     useEffect(() => {
         if (!id) return
+        if (form._id) return
+
         setIsEditing(true);
 
         async function fetchBookingData() {
@@ -73,14 +76,17 @@ export default function NewBookingPage() {
                 const res = await fetch(`/api/bookings/${id}`, {
                     credentials: "include",
                 });
+                setLoading(false);
 
                 if (!res.ok) throw new Error("Failed to fetch booking");
 
                 const data = await res.json();
+                console.log("data =>", data)
                 const booking = data.booking;
 
                 // Pre-fill form with existing booking data
                 setForm({
+                    _id:booking?._id,
                     fullName: booking.fullName || "",
                     email: booking.email || "",
                     phoneNumber: booking.phoneNumber || "",
@@ -102,15 +108,17 @@ export default function NewBookingPage() {
                     salesAgent: booking.salesAgent || "",
                     status: booking?.status || "BOOKED"
                 });
+
             } catch (error) {
+                setLoading(false);
                 console.error("Error fetching booking:", error);
                 handleErrorToast("Failed to load booking data");
             } finally {
                 setLoading(false);
             }
-        }   
+        }
         fetchBookingData()
-    }, [id, handleErrorToast]);
+    }, [id, handleErrorToast, form._id]);
 
     // Fetch logged-in agent
     useEffect(() => {

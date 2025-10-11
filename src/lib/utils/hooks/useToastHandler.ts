@@ -1,13 +1,14 @@
+import { useCallback } from "react";
 import { toast, ToastOptions } from "react-hot-toast";
 
 
 export function useToastHandler() {
 
-  const showLoadingToast = (message: string, id: string = "global-toast") => {
+  const showLoadingToast = useCallback((message: string, id: string = "global-toast") => {
     return toast.loading(message, { id });
-  }
+  }, [])
 
-  const handleSuccessToast = (
+  const handleSuccessToast = useCallback((
     message: string,
     options?: string | ToastOptions
   ) => {
@@ -16,19 +17,19 @@ export function useToastHandler() {
     } else {
       toast.success(message, options);
     }
-  };
+  }, [])
 
-  const handleErrorToast = (message: string, options?: string | ToastOptions) => {
+  const handleErrorToast = useCallback((message: string, options?: string | ToastOptions) => {
     if (typeof options === "string") {
       return toast.error(message, { id: options });
-    }else {
+    } else {
       return toast.error(message, options);
     }
-  }
+  }, [])
 
-  const handleDismissToast = (id: string = "global-toast") => {
+  const handleDismissToast = useCallback((id: string = "global-toast") => {
     toast.dismiss(id);
-  }
+  }, [])
 
   return {
     showLoadingToast,
