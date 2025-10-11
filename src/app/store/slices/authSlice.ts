@@ -146,15 +146,16 @@ const authSlice = createSlice({
       })
 
       // 🚪 Logout
-      .addCase(logoutUser.pending, () => {
+      .addCase(logoutUser.pending, (s) => {
+        s.loading = true; s.error = null;
         toast.dismiss(); toast.loading('Signing out...');
       })
       .addCase(logoutUser.fulfilled, (s) => {
         s.user = null; s.success = false;
-        toast.dismiss(); toast.success('Logged out successfully ✅');
+        toast.dismiss(); toast.success('Sign out successfully ✅');
       })
       .addCase(logoutUser.rejected, (s, a) => {
-        toast.dismiss(); toast.error(a.payload as string || 'Logout failed ❌');
+        toast.dismiss(); toast.error(a.payload as string || 'Sign out failed ❌');
       });
   },
 });

@@ -114,3 +114,29 @@ export const emptyForm: Booking = {
   status: "MODIFIED",
   dateOfBirth: "",
 };
+
+
+// types/booking.ts
+export interface FormattedBookingChange {
+  field: string;
+  oldValue: string | number | null;
+  newValue: string | number | null;
+}
+
+export interface Note {
+  _id: string;
+  text: string;
+  agentName: string;
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+}
+
+export interface CardData {
+  fullName: string;
+  amount: string;
+  giftCode: string;
+  expirationDate: string;
+}
+
+export type EmailTemplateType = "BOOKED" | "MODIFIED" | "CANCELLED" | "REFUND" | "VOUCHER" | "GENERAL";
