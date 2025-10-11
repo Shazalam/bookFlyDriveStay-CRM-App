@@ -20,7 +20,7 @@ import { refundTemplate } from "@/lib/email/templates/refund";
 import UrlInputModal from "@/components/UrlInputModal";
 import GiftCardModal from "@/components/GiftCardModal";
 import { giftCardTemplate, GiftCardTemplateData } from "@/lib/email/templates/giftCard";
-import { fetchCustomerById } from "@/app/store/slices/customerSlice";
+import { clearCustomer, fetchCustomerById } from "@/app/store/slices/customerSlice";
 import ImagePreviewModal from "@/components/docuSignPreviewModal";
 import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 import { fetchCurrentUser, User } from "@/app/store/slices/authSlice";
@@ -98,6 +98,13 @@ export default function BookingDetailPage() {
     useEffect(() => {
         return () => {
             dispatch(clearBooking());
+        };
+    }, [dispatch]);
+
+    // Reset customer when component unmounts
+    useEffect(() => {
+        return () => {
+            dispatch(clearCustomer());
         };
     }, [dispatch]);
 
