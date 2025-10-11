@@ -10,7 +10,7 @@ import Image from "next/image";
 import { bookingTemplate, BookingTemplateData } from "@/lib/email/templates/booking";
 import Modal from "@/components/PreviewModal";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { deleteNote, updateNote, addNote, fetchBookingById, resetOperationStatus } from "@/app/store/slices/bookingSlice";
+import { deleteNote, updateNote, addNote, fetchBookingById, resetOperationStatus, clearBooking } from "@/app/store/slices/bookingSlice";
 import ErrorComponent from "@/components/ErrorComponent";
 import { bookingModificationTemplate } from "@/lib/email/templates/modification";
 import { cancellationTemplate } from "@/lib/email/templates/cancellation";
@@ -51,6 +51,7 @@ interface CardData {
 
 
 export default function BookingDetailPage() {
+
     const { id } = useParams();
     const [activeTab, setActiveTab] = useState("details");
     const [expandedSections, setExpandedSections] = useState({
@@ -60,7 +61,7 @@ export default function BookingDetailPage() {
     });
     // ✅ Use Redux state instead of local state
     const { user } = useAppSelector((state) => state.auth);
-    
+
     const [agent, setAgent] = useState<User | null>(null);
 
     // 2. Rename states for clarity
@@ -72,6 +73,7 @@ export default function BookingDetailPage() {
     const { currentBooking: booking, loading, error, actionLoading } = useAppSelector((state) => state.booking);
 
     const { customer, loading: customerLoading, error: customerError } = useAppSelector((state) => state.customer);
+
     // Add these states and functions to your component
     const [newNote, setNewNote] = useState("");
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -92,6 +94,13 @@ export default function BookingDetailPage() {
 
     const { handleSuccessToast, handleErrorToast } = useToastHandler();
 
+    // Reset form when component unmounts
+    useEffect(() => {
+        return () => {
+            dispatch(clearBooking());
+        };
+    }, [dispatch]);
+
     // Separate handler for voucher emails
     const handleVoucherSend = (voucherData: CardData) => {
         if (!booking) return;
@@ -102,7 +111,6 @@ export default function BookingDetailPage() {
             handleErrorToast("Voucher card data is missing.");
             return;
         }
-
         // ... rest of your voucher email logic
         handleSend("Voucher", undefined, voucherData); // pass cardData directly as third parameter
     };
@@ -112,13 +120,11 @@ export default function BookingDetailPage() {
         handleVoucherSend(newCardData); // Call the dedicated handler
     };
 
-
     const handleAddUrl = (newUrl: string) => {
         setUrl(newUrl); // store only one URL
         setModalOpen(false);
         handleSend("General", newUrl); // now handleSend can use `url` (be mindful of closure; see note)
     };
-
 
     const handleDeleteClick = (note: Note) => {
         setSelectedNote(note);
@@ -146,7 +152,7 @@ export default function BookingDetailPage() {
             .catch((err) => handleErrorToast(err));
     };
 
-    
+
     // Fetch current user using Redux thunk
     useEffect(() => {
         if (!user) {
@@ -162,7 +168,7 @@ export default function BookingDetailPage() {
         } else {
             setAgent(user);
         }
-    }, [dispatch, user,handleErrorToast]);
+    }, [dispatch, user, handleErrorToast]);
 
 
     // Update Note
@@ -405,7 +411,10 @@ export default function BookingDetailPage() {
     }, [id, booking?._id, dispatch, handleErrorToast]);
 
     useEffect(() => {
-        if (activeTab !== "files" || !id) return;
+        console.log("hello")
+        if (!id) return;
+        if(customer  && customer?._id) return 
+        if(activeTab !== "files") return 
 
         (async () => {
             try {
@@ -416,6 +425,7 @@ export default function BookingDetailPage() {
                 );
             }
         })();
+
     }, [activeTab, id, dispatch, handleErrorToast]);
 
     // Format date function
@@ -442,7 +452,6 @@ export default function BookingDetailPage() {
                 return <FiMonitor className="text-gray-500" />;
         }
     };
-
 
     const toggleSection = (section: string) => {
         setExpandedSections(prev => ({
