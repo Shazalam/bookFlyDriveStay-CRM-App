@@ -26,7 +26,7 @@ export default function Header() {
                 <span className="text-white font-bold text-sm">CR</span>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                NexusCRM
+                BFDS HUB
               </span>
             </div>
           </div>
@@ -49,13 +49,13 @@ export default function Header() {
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <a
-              href="#login"
+              href="/login"
               className="text-slate-600 hover:text-blue-600 px-4 py-2 text-sm font-medium transition-colors duration-200"
             >
               Sign In
             </a>
             <a
-              href="#signup"
+              href="/register"
               className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200 hover:scale-105"
             >
               Start Free Trial
@@ -89,13 +89,13 @@ export default function Header() {
               ))}
               <div className="pt-4 pb-3 border-t border-slate-200">
                 <a
-                  href="#login"
+                  href="/login"
                   className="text-slate-600 hover:text-blue-600 block px-3 py-2 text-base font-medium"
                 >
                   Sign In
                 </a>
                 <a
-                  href="#signup"
+                  href="/signup"
                   className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white block mx-3 my-2 px-4 py-2 rounded-lg text-base font-medium text-center"
                 >
                   Start Free Trial

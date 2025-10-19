@@ -1,13 +1,12 @@
 // components/BookingFormWrapper.jsx
-"use client";
-
-import { useSearchParams } from "next/navigation";
 import NewCustomerBookingForm from "./NewCustomerBookingForm";
 import ExistingCustomerBookingForm from "./ExistingCustomerBookingForm";
+import { BookingFormWrapperProps } from "@/types/booking";
 
-export default function BookingFormWrapper() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id");
 
-  return id ? <ExistingCustomerBookingForm id={id} /> : <NewCustomerBookingForm id={id}/>;
+export default async function BookingFormWrapper({ searchParams }: BookingFormWrapperProps) {
+
+  const id = await searchParams?.id as string | undefined;
+
+  return id ? <ExistingCustomerBookingForm id={id} /> : <NewCustomerBookingForm id={id} />;
 }

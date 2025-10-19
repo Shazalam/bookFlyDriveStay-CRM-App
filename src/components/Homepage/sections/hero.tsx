@@ -133,7 +133,7 @@ export default function Hero() {
                     <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
                     <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                   </div>
-                  <div className="text-sm text-slate-500">NexusCRM Dashboard</div>
+                  <div className="text-sm text-slate-500">BFDS HUB Dashboard</div>
                 </div>
 
                 {/* Stats Grid */}

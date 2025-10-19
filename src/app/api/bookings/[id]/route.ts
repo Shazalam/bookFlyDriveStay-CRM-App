@@ -25,16 +25,17 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     const booking = await Booking.findById(id);
 
     if (!booking) {
-      return apiResponse({ error: "Booking not found" }, 404);
+      return apiResponse({ success: false, message: "Booking not found" }, 404);
     }
 
-    return apiResponse({ success: true, booking });
+    return apiResponse({ success: true, booking }, 200);
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server error";
-    return apiResponse({ error: message }, 500);
+    return apiResponse({ success: false, message: message }, 500);
   }
 }
+
 
 function formatTime(time: string | null | undefined): string {
   if (!time) return "";
@@ -42,9 +43,9 @@ function formatTime(time: string | null | undefined): string {
   const [hourStr, minuteStr] = time.split(":");
   let hour = parseInt(hourStr, 10);
   const minute = minuteStr ?? "00";
-  const ampm = hour >= 12 ? "PM" : "AM";
+  // const ampm = hour >= 12 ? "PM" : "AM";
   hour = hour % 12 || 12; // Convert 0 to 12
-  return `${hour}:${minute} ${ampm}`;
+  return `${hour}:${minute}`;
 }
 
 
@@ -55,21 +56,23 @@ export async function PUT(req: Request) {
 
     // ✅ Auth check
     const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
-    if (!token) return apiResponse({ error: "Unauthorized" }, 401);
+    if (!token) return apiResponse({ success: false, message: "Unauthorized" }, 401);
 
     const decoded = verifyToken(token);
     if (typeof decoded === "string" || !decoded || !("id" in decoded)) {
-      return apiResponse({ error: "Invalid token" }, 401);
+      return apiResponse({ success: false, message: "Invalid token" }, 401);
     }
 
     // ✅ Get ID from pathname
     const pathParts = new URL(req.url).pathname.split("/");
     const id = pathParts[pathParts.length - 1];
-    if (!id) return apiResponse({ error: "Booking ID required" }, 400);
+    if (!id) return apiResponse({ success: false, message: "Booking ID required" }, 400);
 
     const data = await req.json();
+
+    console.log("edit and modify data >", data)
     const existingBooking = await Booking.findById(id);
-    if (!existingBooking) return apiResponse({ error: "Booking not found" }, 404);
+    if (!existingBooking) return apiResponse({ success: false, message: "Booking not found" }, 404);
 
     const changes: TimelineChange[] = [];
     const updatedFields: Record<string, unknown> = {}; // ✅ fixed any -> unknown
@@ -151,6 +154,8 @@ export async function PUT(req: Request) {
       if (["pickupTime", "dropoffTime"].includes(field)) {
         const oldTimeFormatted = oldEmpty ? null : formatTime(oldValue);
         const newTimeFormatted = newValue ? formatTime(newValue) : "";
+        console.log("oldTimeFormatted =>", oldTimeFormatted)
+        console.log("newTimeFormatted =>", newTimeFormatted)
 
         if (oldTimeFormatted !== newTimeFormatted) {
           if (!oldTimeFormatted) {
@@ -181,7 +186,7 @@ export async function PUT(req: Request) {
       const timelineEntry: TimelineEntry = {
         date: new Date().toISOString(),
         message: `Updated ${changes.length} field(s)`,
-        agentName: data?.salesAgent || "",
+        agentName: decoded?.name || "",
         changes
       };
       updatePayload.$push = { timeline: timelineEntry };
@@ -192,6 +197,6 @@ export async function PUT(req: Request) {
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server error";
-    return apiResponse({ error: message }, 500);
+    return apiResponse({ success: false, message: message }, 500);
   }
 }

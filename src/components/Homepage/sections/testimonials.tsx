@@ -8,7 +8,7 @@ const testimonials = [
   {
     name: 'Sarah Chen',
     role: 'Sales Director, TechCorp',
-    content: 'NexusCRM transformed our sales process. We saw a 45% increase in lead conversion within the first quarter.',
+    content: 'BFDS HUB transformed our sales process. We saw a 45% increase in lead conversion within the first quarter.',
     avatar: 'SC',
     rating: 5,
   },
@@ -45,7 +45,7 @@ export default function Testimonials() {
             </span>
           </h2>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            Discover why thousands of companies trust NexusCRM to power their sales and customer relationships.
+            Discover why thousands of companies trust BFDS HUB to power their sales and customer relationships.
           </p>
         </motion.div>
 

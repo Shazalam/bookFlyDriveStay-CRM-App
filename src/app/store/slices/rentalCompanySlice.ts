@@ -53,7 +53,7 @@ export const addRentalCompany = createAsyncThunk<
     if (!data.success) {
       return rejectWithValue(data.message || "Failed to add company");
     }
-    
+
     return data.data;
   } catch (err) {
     return rejectWithValue(handleAxiosError(err, "Failed to add company"));

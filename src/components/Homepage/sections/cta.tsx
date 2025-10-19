@@ -30,7 +30,7 @@ export default function CTA() {
           </h2>
 
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of successful companies using NexusCRM to drive growth, 
+            Join thousands of successful companies using BFDS HUB to drive growth, 
             streamline operations, and build lasting customer relationships.
           </p>
 
