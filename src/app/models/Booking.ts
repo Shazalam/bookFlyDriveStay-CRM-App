@@ -8,8 +8,6 @@ export interface INote {
   createdBy?: Types.ObjectId;
 }
 
-
-
 export interface IBooking extends Document {
   fullName: string;
   email: string;
@@ -37,6 +35,7 @@ export interface IBooking extends Document {
   modificationFee?: {
     charge: string;
   }[];
+
   // Add timeline field
   timeline: {
     date: string;
@@ -46,7 +45,6 @@ export interface IBooking extends Document {
       text: string;
     }[];
   }[];
-
   // Add notes field
   notes: INote[];
 }

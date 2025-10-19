@@ -142,11 +142,11 @@
 import React from 'react';
 
 interface InputFieldProps {
-    label: string;
+    label?: string;
     name: string;
     type?: string;
     value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     placeholder?: string;
     required?: boolean;
     readOnly?: boolean;

@@ -59,14 +59,14 @@ export default function Footer() {
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">CR</span>
               </div>
-              <span className="text-xl font-bold text-white">NexusCRM</span>
+              <span className="text-xl font-bold text-white">BFDS HUB</span>
             </div>
             <p className="text-slate-400 mb-4 max-w-md">
               Empowering businesses with intelligent CRM solutions to drive growth, 
               build relationships, and achieve remarkable results.
             </p>
             <div className="text-slate-400 text-sm">
-              © {currentYear} NexusCRM. All rights reserved.
+              © {currentYear} BFDS HUB. All rights reserved.
             </div>
           </motion.div>
 

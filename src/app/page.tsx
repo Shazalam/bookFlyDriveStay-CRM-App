@@ -1,7 +1,7 @@
 
-import { redirect } from "next/navigation";
+import HomePage from "@/components/Homepage/page";
 
 export default function Home() {
- // Always redirect root to /login
-  redirect("/login");
+
+  return <HomePage/>
 }

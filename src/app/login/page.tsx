@@ -1,128 +1,3 @@
-// "use client";
-
-// import { useRouter } from "next/navigation";
-// import { useState } from "react";
-// import Link from "next/link";
-// import { Eye, EyeOff } from "lucide-react";
-// import toast from "react-hot-toast"; // ✅ make sure this is imported
-// import LoadingButton from "@/components/LoadingButton";
-// import { loginUser } from "../store/slices/authSlice";
-// import { useAppDispatch } from "../store/hooks";
-
-// export default function LoginPage() {
-//   const router = useRouter();
-//   const dispatch = useAppDispatch();
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [showPassword, setShowPassword] = useState(false);
-//   const [loading, setLoading] = useState(false);
-
-//   async function handleLogin(e: React.FormEvent) {
-//     e.preventDefault();
-
-//     const toastId = toast.loading("Signing in...");
-//     setLoading(true);
-//     try {
-//       const result = await dispatch(loginUser({ email, password })).unwrap();
-//       setLoading(false);
-      
-//       toast.success(`Welcome back, ${result?.user.name}!`, { id: toastId });
-
-//       router.push("/dashboard");
-//     } catch (err: unknown) {
-//       setLoading(false);
-//       const message = err instanceof Error ? err.message : "Login failed ❌";
-//       toast.error(message, { id: toastId });
-//     }
-//   }
-
-//   return (
-//     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-//       <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
-//         {/* Brand */}
-//         <div className="flex flex-col items-center mb-6">
-//           <div className="h-12 w-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow">
-//             ✈️
-//           </div>
-//           <h1 className="text-2xl font-bold text-gray-900 mt-3">
-//             BookFlyDriveStay
-//           </h1>
-//           <p className="text-sm text-gray-500">Agent Login</p>
-//         </div>
-
-//         {/* Form */}
-//         <form onSubmit={handleLogin} className="space-y-5">
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700 mb-1">
-//               Email
-//             </label>
-//             <input
-//               type="email"
-//               className="w-full border border-gray-300 rounded-lg p-3 bg-white placeholder-gray-400 text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm"
-//               placeholder="you@example.com"
-//               value={email}
-//               onChange={(e) => setEmail(e.target.value)}
-//               required
-//             />
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700 mb-1">
-//               Password
-//             </label>
-//             <div className="relative">
-//               <input
-//                 type={showPassword ? "text" : "password"}
-//                 className="w-full border border-gray-300 rounded-lg p-3 bg-white placeholder-gray-400 text-gray-700  focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm pr-10"
-//                 placeholder="Enter your password"
-//                 value={password}
-//                 onChange={(e) => setPassword(e.target.value)}
-//                 required
-//               />
-//               <button
-//                 type="button"
-//                 onClick={() => setShowPassword(!showPassword)}
-//                 className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
-//               >
-//                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-//               </button>
-//             </div>
-//           </div>
-//           <>
-//             <LoadingButton
-//               type="submit"
-//               loading={loading}
-//               className="w-full bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer"
-//             >
-//               {loading ? (
-//                 "Logging in..."
-//               ) : (
-//                 "Login"
-//               )}
-//             </LoadingButton>
-//           </>
-//         </form>
-
-//         {/* Footer */}
-//         <p className="text-sm text-center text-gray-600 mt-6">
-//           Don’t have an account?{" "}
-//           <Link
-//             href="/register"
-//             className="text-indigo-600 font-medium hover:underline"
-//           >
-//             Register
-//           </Link>
-//         </p>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
 // app/login/page.tsx
 'use client';
 
@@ -131,10 +6,29 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowRight, Star, Shield, Zap, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
 import LoadingButton from "@/components/LoadingButton";
 import { loginUser } from "../store/slices/authSlice";
-import { useAppDispatch } from "../store/hooks";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { IoCarSport } from "react-icons/io5";
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
+
+const features = [
+  {
+    icon: Shield,
+    title: "Enterprise Security",
+    description: "Bank-level encryption to keep your data safe"
+  },
+  {
+    icon: Zap,
+    title: "Lightning Fast",
+    description: "Optimized performance for seamless experience"
+  },
+  {
+    icon: Star,
+    title: "99.9% Uptime",
+    description: "Reliable service you can count on"
+  }
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -142,44 +36,28 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState({ email: false, password: false });
+  const { handleSuccessToast, handleErrorToast, showLoadingToast } = useToastHandler()
+  const { loading } = useAppSelector((state) => state.auth);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
 
-    const toastId = toast.loading("Signing in...");
-    setLoading(true);
+    const toastId = showLoadingToast("Signing in...");
+
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
-      setLoading(false);
-      
-      toast.success(`Welcome back, ${result?.user.name}!`, { id: toastId });
+
+      console.log("login result =>", result )
+
       router.push("/dashboard");
-    } catch (err: unknown) {
-      setLoading(false);
-      const message = err instanceof Error ? err.message : "Login failed ❌";
-      toast.error(message, { id: toastId });
+      // ✅ Show success toast (replace loading toast)
+      handleSuccessToast(`Welcome back, ${result?.data?.name   || "Agent"}!`, toastId);
+    
+    } catch (err) {
+      handleErrorToast(err as string  , toastId);
     }
   }
-
-  const features = [
-    {
-      icon: Shield,
-      title: "Enterprise Security",
-      description: "Bank-level encryption to keep your data safe"
-    },
-    {
-      icon: Zap,
-      title: "Lightning Fast",
-      description: "Optimized performance for seamless experience"
-    },
-    {
-      icon: Star,
-      title: "99.9% Uptime",
-      description: "Reliable service you can count on"
-    }
-  ];
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -207,10 +85,11 @@ export default function LoginPage() {
               className="flex items-center justify-center lg:justify-start space-x-3 mb-8"
             >
               <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-2xl">
-                <span className="text-white font-bold text-xl">CR</span>
+                {/* <span className="text-white font-bold text-xl">CR</span> */}
+                <IoCarSport className="w-10 h-10 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">NexusCRM</h1>
+                <h1 className="text-3xl font-bold text-white">BFDS HUB</h1>
                 <p className="text-cyan-200 text-sm">Enterprise Grade CRM</p>
               </div>
             </motion.div>
@@ -233,7 +112,7 @@ export default function LoginPage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-xl text-slate-300 mb-12 max-w-2xl"
             >
-              Join thousands of companies using NexusCRM to drive growth, streamline operations, and build lasting customer relationships.
+              Join thousands of companies using BFDS HUB to drive growth, streamline operations, and build lasting customer relationships.
             </motion.p>
 
             {/* Features List */}
@@ -272,7 +151,7 @@ export default function LoginPage() {
                 { value: "12.5K+", label: "Customers" },
                 { value: "98.7%", label: "Satisfaction" },
                 { value: "45%", label: "Growth" },
-              ].map((stat, index) => (
+              ].map((stat) => (
                 <div key={stat.label} className="text-center lg:text-left">
                   <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
                   <div className="text-cyan-200 text-sm">{stat.label}</div>
@@ -298,7 +177,7 @@ export default function LoginPage() {
                 <span className="text-white font-bold text-lg">CR</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">NexusCRM</h1>
+                <h1 className="text-2xl font-bold text-slate-900">BFDS HUB</h1>
                 <p className="text-slate-600 text-sm">Enterprise Grade CRM</p>
               </div>
             </div>
@@ -339,11 +218,10 @@ export default function LoginPage() {
                   >
                     <input
                       type="email"
-                      className={`w-full border-2 ${
-                        isFocused.email 
-                          ? 'border-blue-500 ring-4 ring-blue-100 bg-white' 
-                          : 'border-slate-200 bg-slate-50/50'
-                      } rounded-xl p-4 placeholder-slate-400 text-slate-700 outline-none transition-all duration-300 text-lg font-medium shadow-sm`}
+                      className={`w-full border-2 ${isFocused.email
+                        ? 'border-blue-500 ring-4 ring-blue-100 bg-white'
+                        : 'border-slate-200 bg-slate-50/50'
+                        } rounded-xl p-4 placeholder-slate-400 text-slate-700 outline-none transition-all duration-300 text-lg font-medium shadow-sm`}
                       placeholder="you@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -382,11 +260,10 @@ export default function LoginPage() {
                   >
                     <input
                       type={showPassword ? "text" : "password"}
-                      className={`w-full border-2 ${
-                        isFocused.password 
-                          ? 'border-blue-500 ring-4 ring-blue-100 bg-white' 
-                          : 'border-slate-200 bg-slate-50/50'
-                      } rounded-xl p-4 placeholder-slate-400 text-slate-700 outline-none transition-all duration-300 text-lg font-medium shadow-sm pr-12`}
+                      className={`w-full border-2 ${isFocused.password
+                        ? 'border-blue-500 ring-4 ring-blue-100 bg-white'
+                        : 'border-slate-200 bg-slate-50/50'
+                        } rounded-xl p-4 placeholder-slate-400 text-slate-700 outline-none transition-all duration-300 text-lg font-medium shadow-sm pr-12`}
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -416,7 +293,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Remember Me */}
-                <div className="flex items-center space-x-3">
+                {/* <div className="flex items-center space-x-3">
                   <input
                     type="checkbox"
                     id="remember"
@@ -425,7 +302,7 @@ export default function LoginPage() {
                   <label htmlFor="remember" className="text-sm text-slate-700 font-medium">
                     Remember me for 30 days
                   </label>
-                </div>
+                </div> */}
 
                 {/* Submit Button */}
                 <motion.div
@@ -440,7 +317,6 @@ export default function LoginPage() {
                   >
                     {loading ? (
                       <>
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span>Signing in...</span>
                       </>
                     ) : (
@@ -469,10 +345,10 @@ export default function LoginPage() {
                   className="flex items-center justify-center space-x-2 border border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50 py-3 px-4 rounded-xl font-medium transition-all duration-200"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                   <span>Google</span>
                 </motion.button>
@@ -483,7 +359,7 @@ export default function LoginPage() {
                   className="flex items-center justify-center space-x-2 border border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50 py-3 px-4 rounded-xl font-medium transition-all duration-200"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
                   </svg>
                   <span>Twitter</span>
                 </motion.button>
@@ -497,7 +373,7 @@ export default function LoginPage() {
                 className="text-center"
               >
                 <p className="text-slate-600">
-                  Don't have an account?{" "}
+                 {`Don't have an account?`}{" "}
                   <Link
                     href="/register"
                     className="text-blue-600 font-bold hover:text-blue-500 transition-colors duration-200 inline-flex items-center space-x-1 group"

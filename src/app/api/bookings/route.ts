@@ -21,7 +21,6 @@ export async function GET(req: Request) {
   }
 }
 
-
 // ✅ Required fields for booking
 const REQUIRED_FIELDS = [
   "fullName",
@@ -33,7 +32,7 @@ const REQUIRED_FIELDS = [
   "billingAddress",
 ];
 
-// ✅ POST create booking
+// ✅ POST create new/new modification booking
 export async function POST(req: Request) {
   try {
     await connectDB();
@@ -83,7 +82,7 @@ export async function POST(req: Request) {
       expiration: data.expiration,
       billingAddress: data.billingAddress,
       dateOfBirth: data.dateOfBirth,
-      salesAgent: data.salesAgent || "Unknown Agent",
+      salesAgent: decoded.name || "Unknown Agent",
       agentId: decoded.id,
       status: data.status || "BOOKED",
       // Add initial timeline entry for new booking
@@ -92,7 +91,7 @@ export async function POST(req: Request) {
         : [
           {
             date: new Date().toISOString(),
-            agentName: data?.salesAgent || "",
+            agentName: decoded.name || "",
             message: "New booking created",
             changes: [],
           }

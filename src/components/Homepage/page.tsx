@@ -11,6 +11,7 @@ import ProductShowcase from './sections/product-showcase';
 import Testimonials from './sections/testimonials';
 import CTA from './sections/cta';
 import Footer from './layout/footer';
+import LoadingScreen from '../LoadingScreen';
 
 
 export default function HomePage() {
@@ -22,9 +23,7 @@ export default function HomePage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
+    <LoadingScreen/>
     );
   }
 

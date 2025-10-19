@@ -48,25 +48,6 @@ export interface Booking {
   customerName?: string;
 }
 
-export const rentalCompanies = [
-  "Alamo",
-  "Avis",
-  "Budget",
-  "Dollar",
-  "Enterprise",
-  "Europcar",
-  "Easirent",
-  "Fox",
-  "Hertz",
-  "National",
-  "Other",
-  "Payless",
-  "SiXT",
-  "Thrifty",
-  "Zipcar",
-];
-
-
 export const editableGroups = {
   Customer: ["fullName", "email", "phoneNumber"],
   Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],
@@ -115,7 +96,6 @@ export const emptyForm: Booking = {
   dateOfBirth: "",
 };
 
-
 // types/booking.ts
 export interface FormattedBookingChange {
   field: string;
@@ -140,3 +120,25 @@ export interface CardData {
 }
 
 export type EmailTemplateType = "BOOKED" | "MODIFIED" | "CANCELLED" | "REFUND" | "VOUCHER" | "GENERAL";
+
+export interface BookingFormWrapperProps {
+  searchParams: {[key:string]: string | string[] | undefined}
+}
+
+export const rentalCompanies = [
+  "Alamo",
+  "Avis",
+  "Budget",
+  "Dollar",
+  "Enterprise",
+  "Europcar",
+  "Easirent",
+  "Fox",
+  "Hertz",
+  "National",
+  "Other",
+  "Payless",
+  "SiXT",
+  "Thrifty",
+  "Zipcar",
+];

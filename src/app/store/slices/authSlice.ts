@@ -1,17 +1,19 @@
+import { handleAxiosError } from '@/lib/utils/handleAxiosError';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 interface LoginResponse {
   success: boolean;
   message: string;
-  user: User;
+  data: User;
 }
 
 export interface User {
   id?: string;
   name: string;
   email: string;
-  avatar?: string;
+  avatar?: string
 }
 
 interface AuthState {
@@ -53,36 +55,19 @@ export const loginUser = createAsyncThunk<
   LoginResponse,
   { email: string; password: string },
   { rejectValue: string }
->('auth/login', async (formData, thunkAPI) => {
+>('auth/login', async (formData, { rejectWithValue }) => {
   try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.success)
-      return thunkAPI.rejectWithValue(data.error || 'Invalid credentials');
+    const { data } = await axios.post('/api/auth/login', formData);
+    console.log("login data =>", data)
+    if (!data.success) {
+      return rejectWithValue(data.message || 'Invalid credentials');
+    }
     return data;
-  } catch {
-    return thunkAPI.rejectWithValue('Network error');
+  } catch (err) {
+    console.log("login error =>", err)
+    return rejectWithValue(handleAxiosError(err, 'Network error'));
   }
 });
-
-// 🧠 Get Current User
-export const fetchCurrentUser = createAsyncThunk<User, void, { rejectValue: string }>(
-  'auth/me',
-  async (_, thunkAPI) => {
-    try {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
-      const data = await res.json();
-      if (!res.ok) return thunkAPI.rejectWithValue('Not authorized');
-      return data.user as User;
-    } catch {
-      return thunkAPI.rejectWithValue('Auth check failed');
-    }
-  }
-);
 
 // 🚪 Logout
 export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
@@ -93,6 +78,21 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
       if (!res.ok) return thunkAPI.rejectWithValue('Logout failed');
     } catch {
       return thunkAPI.rejectWithValue('Logout failed');
+    }
+  }
+);
+
+// 🧠 Get Current User
+export const fetchCurrentUser = createAsyncThunk<User, void, { rejectValue: string }>(
+  'auth/me',
+  async (_, thunkAPI) => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) return thunkAPI.rejectWithValue('Not authorized');
+      return data.data as User;
+    } catch {
+      return thunkAPI.rejectWithValue('Auth check failed');
     }
   }
 );
@@ -114,7 +114,7 @@ const authSlice = createSlice({
         s.loading = true; s.error = null;
       })
       .addCase(loginUser.fulfilled, (s, a: PayloadAction<LoginResponse>) => {
-        s.loading = false; s.user = a.payload.user; s.success = true;
+        s.loading = false; s.user = a.payload.data; s.success = true;
       })
       .addCase(loginUser.rejected, (s, a) => {
         s.loading = false; s.error = a.payload as string;
@@ -148,14 +148,12 @@ const authSlice = createSlice({
       // 🚪 Logout
       .addCase(logoutUser.pending, (s) => {
         s.loading = true; s.error = null;
-        toast.dismiss(); toast.loading('Signing out...');
       })
       .addCase(logoutUser.fulfilled, (s) => {
-        s.user = null; s.success = false;
-        toast.dismiss(); toast.success('Sign out successfully ✅');
+        s.user = null; s.success = false, s.loading = false;;
       })
-      .addCase(logoutUser.rejected, (s, a) => {
-        toast.dismiss(); toast.error(a.payload as string || 'Sign out failed ❌');
+      .addCase(logoutUser.rejected, (s) => {
+        s.user = null; s.success = false; s.loading = false;
       });
   },
 });

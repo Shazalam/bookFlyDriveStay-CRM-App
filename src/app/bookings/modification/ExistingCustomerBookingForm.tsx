@@ -731,6 +731,7 @@ import FieldSelectionPanel from "@/components/FieldSelectionPanel";
 import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 import { RootState } from "@/app/store/store";
 import { addRentalCompany, fetchRentalCompanies } from "@/app/store/slices/rentalCompanySlice";
+import { maskEmail, maskPhone } from "@/lib/utils/maskEmainAndPhoneNumber";
 
 interface ExistingCustomerBookingFormProps {
   id?: string | null;
@@ -751,6 +752,10 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
   const { rentalCompanies } = useAppSelector(
     (state: RootState) => state.rentalCompany
   );
+  const { user } = useAppSelector(
+    (state: RootState) => state.auth
+  );
+
   const [otherRentalCompany, setOtherRentalCompany] = useState("");
   const { handleSuccessToast, handleErrorToast } = useToastHandler();
 
@@ -808,12 +813,12 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
         cardLast4: currentBooking.cardLast4 || "",
         expiration: currentBooking.expiration || "",
         billingAddress: currentBooking.billingAddress || "",
-        salesAgent: currentBooking.salesAgent || "",
+        salesAgent: user && user.name || "",
         status: "MODIFIED",
         dateOfBirth: currentBooking.dateOfBirth ?? "",
       });
     }
-  }, [currentBooking, id]);
+  }, [currentBooking, id, user]);
 
   // Fetch logged-in agent
   useEffect(() => {
@@ -897,6 +902,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
     e.preventDefault();
 
     try {
+
       const companyName = form.rentalCompany.trim();
       if (!companyName) {
         handleErrorToast("Please enter or select a rental company.");
@@ -966,6 +972,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
         formData,
         id: id || undefined,
       }));
+
       router.push("/dashboard");
       setNewModificationFee("");
 
@@ -1125,7 +1132,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                       label="Email Address"
                       name="email"
                       type="email"
-                      value={form.email}
+                      value={id ? maskEmail(form.email) : form.email}
                       onChange={handleChange}
                       required
                       placeholder="your@email.com"
@@ -1136,7 +1143,7 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                     <InputField
                       label="Phone Number"
                       name="phoneNumber"
-                      value={form.phoneNumber}
+                      value={id ? maskPhone(form.phoneNumber) : form.phoneNumber}
                       onChange={handleChange}
                       required
                       placeholder="Enter phone number"
@@ -1177,16 +1184,15 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                         Rental Company
                       </label>
                       {otherRentalCompany === "Other" || rentalCompanies.length === 0 ? (
-                        <input
+                        <InputField
                           name="rentalCompany"
                           value={form.rentalCompany}
                           onChange={handleChange}
                           placeholder="Enter rental company name"
-                          required
-                          disabled={!editable.rentalCompany}
+                          required={!editable.rentalCompany}
                           className={`w-full border-2 rounded-xl p-4 text-slate-700 placeholder-slate-400 focus:outline-none transition-all duration-200 ${!editable.rentalCompany
-                              ? 'bg-slate-100 border-slate-200 text-slate-500'
-                              : 'bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                            ? 'bg-slate-100 border-slate-200 text-slate-500'
+                            : 'bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
                             }`}
                         />
                       ) : (
@@ -1195,8 +1201,8 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                           value={form.rentalCompany}
                           onChange={handleChange}
                           className={`w-full border-2 rounded-xl p-4 text-slate-700 focus:outline-none transition-all duration-200 ${!editable.rentalCompany
-                              ? 'bg-slate-100 border-slate-200 text-slate-500'
-                              : 'bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                            ? 'bg-slate-100 border-slate-200 text-slate-500'
+                            : 'bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
                             }`}
                           required
                           disabled={!editable.rentalCompany}
@@ -1204,10 +1210,10 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                           <option value="">Select a company</option>
                           {rentalCompanies.map((company) => (
                             <option key={company._id} value={company.name}>
-                              {company.name}
+                              {company.name === "Other" ? "Other (Add new)" : company.name}
                             </option>
                           ))}
-                          <option value="Other">Other (Add new)</option>
+                          {/* <option value="Other">Other (Add new)</option> */}
                         </select>
                       )}
                     </div>
@@ -1362,7 +1368,8 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                           Modification Fee
                         </label>
                         <div className="flex gap-3">
-                          <input
+                          <InputField
+                            name="newModificationFee"
                             type="text"
                             value={newModificationFee}
                             onChange={(e) => setNewModificationFee(e.target.value)}
@@ -1449,8 +1456,8 @@ export default function ExistingCustomerBookingForm({ id }: ExistingCustomerBook
                         rows={3}
                         readOnly={!editable.billingAddress}
                         className={`w-full border-2 rounded-xl p-4 text-slate-700 placeholder-slate-400 focus:outline-none transition-all duration-200 resize-none ${!editable.billingAddress
-                            ? 'bg-slate-100 border-slate-200 text-slate-500'
-                            : 'bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                          ? 'bg-slate-100 border-slate-200 text-slate-500'
+                          : 'bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
                           }`}
                       />
                     </div>

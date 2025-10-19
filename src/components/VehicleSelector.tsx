@@ -227,6 +227,7 @@ export default function VehicleSelector({ value, onChange }: VehicleSelectorProp
           setError(data.error || "Upload failed");
         }
       } catch (err) {
+        console.log("error =>", err)
         setError("Upload error. Please try again.");
       }
 
@@ -377,7 +378,7 @@ export default function VehicleSelector({ value, onChange }: VehicleSelectorProp
                 </div>
 
                 {/* URL Preview */}
-                <div className="mt-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-slate-200">
+                {/* <div className="mt-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-slate-200">
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Image URL
                   </label>
@@ -401,7 +402,7 @@ export default function VehicleSelector({ value, onChange }: VehicleSelectorProp
                       )}
                     </motion.button>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </motion.div>

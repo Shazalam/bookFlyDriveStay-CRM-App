@@ -420,8 +420,8 @@ export default function BookingDetailPage() {
     useEffect(() => {
         console.log("hello")
         if (!id) return;
-        if(customer  && customer?._id) return 
-        if(activeTab !== "files") return 
+        if (customer && customer?._id) return
+        if (activeTab !== "files") return
 
         (async () => {
             try {
@@ -571,11 +571,11 @@ export default function BookingDetailPage() {
                                     <div className="p-4 border-t border-gray-200 bg-white">
                                         <div className="flex items-center mb-4">
                                             <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
-                                                {booking.fullName ? booking.fullName.split(' ').map(n => n[0]).join('') : ''}
+                                                {booking?.fullName ? booking?.fullName.split(' ').map(n => n[0]).join('') : ''}
 
                                             </div>
                                             <div>
-                                                <h3 className="font-semibold text-gray-800">{booking.fullName}</h3>
+                                                <h3 className="font-semibold text-gray-800">{booking?.fullName}</h3>
                                                 <p className="text-sm text-gray-600">Primary Customer</p>
                                             </div>
                                         </div>
@@ -583,15 +583,19 @@ export default function BookingDetailPage() {
                                         <div className="space-y-3">
                                             <div className="flex items-center text-gray-600 p-2 bg-gray-50 rounded-lg">
                                                 <FiMail className="mr-3 text-gray-500" />
-                                                <span className="text-sm">{(() => {
-                                                    const [localPart, domain] = booking.email.split('@');
-                                                    return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
-                                                })()}
+                                                <span className="text-sm">
+                                                    {(() => {
+                                                        const [localPart = "", domain = ""] = booking?.email?.split("@") || [];
+                                                        return localPart && domain
+                                                            ? `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`
+                                                            : "N/A";
+                                                    })()}
                                                 </span>
+
                                             </div>
                                             <div className="flex items-center text-gray-600 p-2 bg-gray-50 rounded-lg">
                                                 <FiPhone className="mr-3 text-gray-500" />
-                                                <span className="text-sm"> ******{booking.phoneNumber.slice(-4)}</span>
+                                                <span className="text-sm"> ******{booking?.phoneNumber?.slice(-4)}</span>
                                             </div>
                                             {
                                                 booking?.dateOfBirth && (
@@ -1356,6 +1360,5 @@ export default function BookingDetailPage() {
                 />
             )}
         </>
-
     );
 }
