@@ -433,7 +433,7 @@ export default function BookingDetailPage() {
             }
         })();
 
-    }, [activeTab, id, dispatch, handleErrorToast]);
+    }, [activeTab, id, dispatch, handleErrorToast, customer]);
 
     // Format date function
     const formatDate = (dateString: string) => {

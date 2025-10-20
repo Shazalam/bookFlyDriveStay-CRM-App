@@ -2,36 +2,43 @@
 
 import { FiXCircle } from "react-icons/fi";
 
-interface ConfirmCancelModalProps {
+interface ConfirmDeleteBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }
 
-export default function ConfirmCancelModal({
+export default function ConfirmDeleteBookingModal({
   isOpen,
   onClose,
   onConfirm,
-}: ConfirmCancelModalProps) {
+}: ConfirmDeleteBookingModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40"  onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in">
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black/40"
+      onClick={onClose}
+    >
+      {/* ✅ Stop click propagation so modal doesn’t close when clicking inside */}
+      <div
+        className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-red-100 text-red-600 rounded-full p-2">
             <FiXCircle className="w-6 h-6" />
           </div>
           <h2 className="text-lg font-semibold text-gray-900">
-            Cancel Booking
+            Delete Booking
           </h2>
         </div>
 
         {/* Body */}
         <p className="text-gray-600 mb-6">
-          Are you sure you want to cancel this booking? This action cannot be
-          undone.
+          Are you sure you want to <span className="font-semibold text-red-600">delete</span> this booking? 
+          This action cannot be undone.
         </p>
 
         {/* Actions */}
@@ -46,7 +53,7 @@ export default function ConfirmCancelModal({
             onClick={onConfirm}
             className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
           >
-            Yes, Cancel It
+            Yes, Delete It
           </button>
         </div>
       </div>
