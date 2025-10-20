@@ -66,6 +66,7 @@ export async function PUT(req: Request) {
     // ✅ Get ID from pathname
     const pathParts = new URL(req.url).pathname.split("/");
     const id = pathParts[pathParts.length - 1];
+
     if (!id) return apiResponse({ success: false, message: "Booking ID required" }, 400);
 
     const data = await req.json();
@@ -154,8 +155,6 @@ export async function PUT(req: Request) {
       if (["pickupTime", "dropoffTime"].includes(field)) {
         const oldTimeFormatted = oldEmpty ? null : formatTime(oldValue);
         const newTimeFormatted = newValue ? formatTime(newValue) : "";
-        console.log("oldTimeFormatted =>", oldTimeFormatted)
-        console.log("newTimeFormatted =>", newTimeFormatted)
 
         if (oldTimeFormatted !== newTimeFormatted) {
           if (!oldTimeFormatted) {
@@ -198,5 +197,53 @@ export async function PUT(req: Request) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server error";
     return apiResponse({ success: false, message: message }, 500);
+  }
+}
+
+
+// DELETE (Soft Delete)
+export async function DELETE(req: Request) {
+  try {
+    await connectDB();
+
+    const token = req.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
+    if (!token) return apiResponse({ success: false, message: "Unauthorized access. Token missing." }, 401);
+
+    const decoded = verifyToken(token);
+    if (typeof decoded === "string" || !decoded || !("id" in decoded)) {
+      return apiResponse({ success: false, message: "Invalid or expired token." }, 401);
+    }
+
+    // ✅ Get ID from pathname
+    const pathParts = new URL(req.url).pathname.split("/");
+    const id = pathParts[pathParts.length - 1];
+
+    if (!id) return apiResponse({ success: false, message: "Booking ID is required." }, 400);
+
+    const booking = await Booking.findByIdAndUpdate(
+      id,
+      { isDeleted: true },
+      { new: true }
+    );
+
+    if (!booking) return apiResponse({ success: false, message: "Booking not found." }, 404);
+
+    return apiResponse(
+      {
+        success: true,
+        message: "Booking soft-deleted successfully.",
+        data: {
+          bookingId: booking._id,
+          status: booking.status,
+          deletedAt: new Date(),
+        },
+      },
+      200
+    );
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Internal server error.";
+    return apiResponse(
+      { success: false, message }, 500);
   }
 }

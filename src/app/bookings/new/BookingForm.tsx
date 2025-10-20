@@ -27,6 +27,7 @@ export default function BookingForm() {
     const { rentalCompanies } = useAppSelector(
         (state: RootState) => state.rentalCompany
     );
+    
     const { user } = useAppSelector(
         (state: RootState) => state.auth
     );
@@ -64,7 +65,6 @@ export default function BookingForm() {
     useEffect(() => {
         dispatch(fetchRentalCompanies());
     }, [dispatch]);
-
 
     // ✅ Auto-fill salesAgent when user is available
     useEffect(() => {
@@ -237,7 +237,6 @@ export default function BookingForm() {
         }
     }
 
-   
 
     if (loading) return <LoadingScreen />;
 

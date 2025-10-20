@@ -1,8 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { IoCarSport, IoLocation, IoTime, IoShieldCheckmark } from "react-icons/io5";
-
 export default function LoadingScreen() {
   return (
     // <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors p-4">

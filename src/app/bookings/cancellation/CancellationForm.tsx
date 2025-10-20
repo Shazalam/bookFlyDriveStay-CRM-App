@@ -105,6 +105,7 @@ export default function CancellationForm() {
         )()
     }, [id, dispatch, router, handleErrorToast, currentBooking?._id]);
 
+
     // Update form when booking data is available
     useEffect(() => {
         if (currentBooking && id) {
@@ -129,13 +130,13 @@ export default function CancellationForm() {
                 cardLast4: currentBooking.cardLast4 || "",
                 expiration: currentBooking.expiration || "",
                 billingAddress: currentBooking.billingAddress || "",
-                salesAgent: currentBooking.salesAgent || "",
+                salesAgent: user && user?.name || "",
                 status: "CANCELLED",
                 dateOfBirth: currentBooking.dateOfBirth || "",
                 refundAmount: ""
             });
         }
-    }, [currentBooking, id]);
+    }, [currentBooking, id, user]);
 
     // Fetch current user using Redux thunk
     useEffect(() => {
@@ -165,7 +166,7 @@ export default function CancellationForm() {
         if (user?.id) {
             setForm((prev) => ({ ...prev, salesAgent: user.name }));
         }
-    }, [])
+    }, [user])
 
     // Calculate refund and update MCO with cancellation fee
     const calculateRefund = () => {
@@ -177,6 +178,7 @@ export default function CancellationForm() {
             setForm((prev) => ({
                 ...prev,
                 refundAmount: refund >= 0 ? refund.toFixed(2) : "0.00",
+                mco:fee.toString()
             }));
         }
     };
@@ -231,14 +233,16 @@ export default function CancellationForm() {
                 await dispatch(fetchRentalCompanies()); // refresh list
             }
 
+            console.log("cancellation Fee =>", form)
+
             // Prepare data for API
             const requestData = {
                 bookingId: isExistingCustomer ? form.id : undefined,
                 email: form.email,
                 customerType: isExistingCustomer ? "existing" : "new",
                 refundAmount: form.refundAmount,
-                mco: cancellationFee,
                 salesAgent: form.salesAgent,
+                mco:cancellationFee,
                 // For new customers, include all necessary booking details
                 ...(isExistingCustomer ? {} : {
                     fullName: form.fullName,
@@ -246,6 +250,7 @@ export default function CancellationForm() {
                     rentalCompany: form.rentalCompany,
                     confirmationNumber: form.confirmationNumber,
                     total: form.total,
+                    mco: cancellationFee,
                     payableAtPickup: form.payableAtPickup,
                     pickupDate: form.pickupDate,
                     dropoffDate: form.dropoffDate,
@@ -260,6 +265,8 @@ export default function CancellationForm() {
                     dateOfBirth: form.dateOfBirth
                 })
             };
+
+            console.log("cancellation form =>", requestData)
 
             const response = await fetch("/api/bookings/cancel", {
                 method: "POST",
@@ -786,7 +793,6 @@ export default function CancellationForm() {
                             >
                                 {isSubmitting ? (
                                     <div className="flex items-center justify-center space-x-2">
-                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                         <span>Processing Cancellation...</span>
                                     </div>
                                 ) : (

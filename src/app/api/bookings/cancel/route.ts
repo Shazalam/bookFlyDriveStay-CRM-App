@@ -47,6 +47,9 @@ export async function POST(req: NextRequest) {
         return apiResponse({ error: "Booking not found" }, 404);
       }
 
+      console.log("existing =>", existingBooking)
+      console.log("mco =>", mco)
+
       // Create a single timeline entry with all changes
       const changes = [];
       
@@ -79,8 +82,7 @@ export async function POST(req: NextRequest) {
         {
           status: "CANCELLED",
           refundAmount,
-          mco,
-          agentId: decoded.id,
+          mco:mco,
           updatedAt: new Date(),
           // Add the single timeline entry
           $push: { timeline: timelineEntry }

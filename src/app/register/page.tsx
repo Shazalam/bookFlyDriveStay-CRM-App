@@ -5,9 +5,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowRight, CheckCircle, XCircle, User, Mail, Lock, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
 import LoadingButton from "@/components/LoadingButton";
 import { IoCarSport } from "react-icons/io5";
+import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,16 +17,49 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState({ name: false, email: false, password: false });
+  const {handleSuccessToast, handleErrorToast, showLoadingToast, handleDismissToast} = useToastHandler()
+  // async function handleRegister(e: React.FormEvent) {
+  //   e.preventDefault();
+
+  //   // Validate password strength before submitting
+  //   const strength = getPasswordStrength(password);
+  //   if (strength.label === "Too short" || strength.label === "Weak") {
+  //     toast.error("Please use a stronger password");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   try {
+  //     const res = await fetch("/api/auth/register", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ name, email, password }),
+  //     });
+  //     const data = await res.json();
+
+  //     if (res.ok) {
+  //       toast.success("Account created successfully! Please log in.");
+  //       router.push("/login");
+  //     } else {
+  //       toast.error(data.error || "Something went wrong");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Network error. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
 
-    // Validate password strength before submitting
     const strength = getPasswordStrength(password);
     if (strength.label === "Too short" || strength.label === "Weak") {
-      toast.error("Please use a stronger password");
+      handleErrorToast("Please use a stronger password");
       return;
     }
+
+    const toastId = showLoadingToast("Creating account...");
 
     setLoading(true);
     try {
@@ -35,17 +68,20 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
+
       const data = await res.json();
 
       if (res.ok) {
-        toast.success("Account created successfully! Please log in.");
+        handleSuccessToast("Account created successfully! Please log in.", toastId);
         router.push("/login");
       } else {
-        toast.error(data.error || "Something went wrong");
+        handleErrorToast(data.error || "Something went wrong", toastId);
       }
-    } catch (error) {
-      toast.error("Network error. Please try again.");
+    } catch {
+      // ✅ removed unused 'error' variable
+      handleErrorToast("Network error. Please try again.");
     } finally {
+      handleDismissToast(toastId);
       setLoading(false);
     }
   }

@@ -47,6 +47,8 @@ export interface IBooking extends Document {
   }[];
   // Add notes field
   notes: INote[];
+  isDeleted: boolean; // 👈 added soft-delete flag
+
 }
 
 const BookingSchema = new Schema<IBooking>(
@@ -120,8 +122,12 @@ const BookingSchema = new Schema<IBooking>(
         }
       ],
       default: []
-    }
-
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      required: true // ✅ Make it required
+    },
   },
   { timestamps: true }
 );

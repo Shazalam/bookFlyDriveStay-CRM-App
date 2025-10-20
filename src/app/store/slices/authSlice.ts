@@ -150,7 +150,7 @@ const authSlice = createSlice({
         s.loading = true; s.error = null;
       })
       .addCase(logoutUser.fulfilled, (s) => {
-        s.user = null; s.success = false, s.loading = false;;
+        s.user = null; s.success = false; s.loading = false;
       })
       .addCase(logoutUser.rejected, (s) => {
         s.user = null; s.success = false; s.loading = false;

@@ -24,7 +24,8 @@ export interface Booking {
   billingAddress: string;
   salesAgent: string;
   dateOfBirth?: string;
-  status: "BOOKED" | "MODIFIED" | "CANCELLED";
+   agentId?: string;
+  status: "BOOKED" | "MODIFIED" | "CANCELLED" | "ALL";
   createdAt: string;
   modificationFee: { charge: string }[]; // Change to array
   timeline?: {
@@ -65,7 +66,6 @@ const initialState: BookingState = {
   operation: "idle",
 };
 
-
 // Async thunks for fetch booking list
 export const fetchBookings = createAsyncThunk<
   Booking[],
@@ -83,6 +83,7 @@ export const fetchBookings = createAsyncThunk<
     }
 
     const data = await res.json();
+    console.log("fetchBooking =>", data)
     return data.bookings || [];
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error loading bookings";
@@ -217,6 +218,32 @@ export const deleteNote = createAsyncThunk<
   }
 });
 
+// --- DELETE BOOKING (Soft Delete) ---
+export const deleteBooking = createAsyncThunk<
+  string, // Return deleted booking ID
+  string, // bookingId
+  { rejectValue: string }
+>("booking/delete", async (bookingId, { rejectWithValue }) => {
+  try {
+    const res = await fetch(`/api/bookings/${bookingId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to delete booking");
+    }
+
+    return bookingId; // return the deleted booking ID
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error deleting booking";
+    return rejectWithValue(message);
+  }
+});
+
 
 const bookingSlice = createSlice({
   name: "booking",
@@ -329,9 +356,25 @@ const bookingSlice = createSlice({
         state.error = action.payload || "Failed to delete note";
         state.actionLoading = false;
         state.operation = "failed";
+      })
+      // -------------------- DELETE BOOKING --------------------
+      .addCase(deleteBooking.pending, (state) => {
+        state.listLoading= true;
+        state.error = null;
+        state.operation = "pending";
+      })
+      .addCase(deleteBooking.fulfilled, (state, action: PayloadAction<string>) => {
+        state.bookingsList = state.bookingsList.filter(
+          (b) => b._id !== action.payload
+        );
+        state.listLoading = false;
+        state.operation = "succeeded";
+      })
+      .addCase(deleteBooking.rejected, (state, action) => {
+        state.error = action.payload || "Failed to delete booking";
+        state.listLoading = false;
+        state.operation = "failed";
       });
-
-
   },
 });
 

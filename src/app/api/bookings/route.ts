@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     if (!token) return apiResponse({ error: "Unauthorized" }, 401);
 
 
-    const bookings = await Booking.find().sort({ createdAt: -1 });
+    const bookings = await Booking.find({isDeleted: false}).sort({ createdAt: -1 });
     return apiResponse({ success: true, bookings });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server error";
@@ -85,6 +85,7 @@ export async function POST(req: Request) {
       salesAgent: decoded.name || "Unknown Agent",
       agentId: decoded.id,
       status: data.status || "BOOKED",
+      isDeleted: false, // ✅ ensure stored as false
       // Add initial timeline entry for new booking
       timeline: Array.isArray(data.timeline) && data.timeline.length > 0
         ? data.timeline
@@ -96,15 +97,21 @@ export async function POST(req: Request) {
             changes: [],
           }
         ],
-
     };
+    
+    const bookingData = new Booking(payload)
 
     // ✅ Save booking
-    const booking = await Booking.create(payload);
-
+    const booking = await bookingData.save();
+    
     return apiResponse({ success: true, booking }, 201);
+
+    // ✅ Save booking
+    // const booking = await Booking.create(payload);
+    // console.log("booking deleted =>", booking)
+    // return apiResponse({ success: true, booking }, 201);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server error";
-    return apiResponse({ error: message }, 500);
+    return apiResponse({ success: false, error: message }, 500);
   }
 }
