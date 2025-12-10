@@ -9,7 +9,6 @@ export default function GlobalAuthInitializer() {
   const { user, loading } = useAppSelector((s) => s.auth);
   const pathname = usePathname();
 
-
   useEffect(() => {
 
     if (pathname === "/login" || pathname === "/register") return ;
