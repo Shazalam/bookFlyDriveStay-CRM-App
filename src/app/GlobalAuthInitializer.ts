@@ -1,8 +1,9 @@
 "use client"
-import { usePathname } from "next/navigation";
+
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { useEffect } from "react";
 import { fetchCurrentUser } from "./store/slices/authSlice";
+import { usePathname } from "next/navigation";
 
 export default function GlobalAuthInitializer() {
   const dispatch = useAppDispatch();
