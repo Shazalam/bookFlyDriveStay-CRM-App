@@ -63,10 +63,11 @@ export default function BookingRow({
                         <div className="ml-4">
                             <div className="text-sm font-semibold text-slate-900">{booking.fullName}</div>
                             <div className="text-sm text-slate-500">
-                                {(() => {
+                                {/* {(() => {
                                     const [localPart, domain] = booking.email.split('@');
                                     return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
-                                })()}
+                                })()} */}
+                                {booking?.email}
                             </div>
                         </div>
                     </div>
@@ -151,12 +152,16 @@ export default function BookingRow({
                                     icon={FiUser}
                                     title="Customer Details"
                                     items={[
-                                        { label: "Phone", value: `******${booking.phoneNumber.slice(-4)}` },
+                                        // { label: "Phone", value: `******${booking.phoneNumber.slice(-4)}` },
+                                        { label: "Phone", value:booking.phoneNumber },
+                                        // {
+                                        //     label: "Email", value: (() => {
+                                        //         const [localPart, domain] = booking.email.split('@');
+                                        //         return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
+                                        //     })()
+                                        // }
                                         {
-                                            label: "Email", value: (() => {
-                                                const [localPart, domain] = booking.email.split('@');
-                                                return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
-                                            })()
+                                            label: "Email", value: booking.email
                                         }
                                     ]}
                                 />
