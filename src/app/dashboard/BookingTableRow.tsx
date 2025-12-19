@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { IoCarSport } from "react-icons/io5";
 import DetailCard from "./BookingDetailCard";
+import { formatYyyyMmDdToMmDdYyyy } from "../bookings/[id]/view/page";
 
 type BookingStatus = Booking["status"];
 // Enhanced Booking Row Component
@@ -78,7 +79,8 @@ export default function BookingRow({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-slate-900">
-                        {new Date(booking.pickupDate).toLocaleDateString()}
+                        {formatYyyyMmDdToMmDdYyyy(booking.pickupDate)}
+                        {}
                     </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -174,7 +176,7 @@ export default function BookingRow({
                                     items={[
                                         { label: "Pickup", value: booking.pickupLocation },
                                         { label: "Dropoff", value: booking.dropoffLocation },
-                                        { label: "Dates", value: `${new Date(booking.pickupDate).toLocaleDateString()} - ${new Date(booking.dropoffDate).toLocaleDateString()}` }
+                                        { label: "Dates", value: `${formatYyyyMmDdToMmDdYyyy(booking.pickupDate)} - ${formatYyyyMmDdToMmDdYyyy(booking.dropoffDate)}` }
                                     ]}
                                 />
 
