@@ -27,6 +27,8 @@ import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 import BookingRow from "./BookingTableRow";
 import ErrorComponent from "@/components/ErrorComponent";
 import { useBookings } from "@/lib/utils/hooks/useBookings";
+import InputField from "@/components/InputField";
+import { Calendar } from "lucide-react";
 
 type BookingStatus = Booking["status"];
 type SortableField =
@@ -53,6 +55,9 @@ export default function DashboardPage() {
     const [itemsPerPage] = useState(10);
     const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
     const [deletedBookingId, setDeletedBookingId] = useState<string | null>(null);
+    const [pickupDateFilter, setPickupDateFilter] = useState<string>("");
+
+    console.log("pickupDateFilter =>", pickupDateFilter)
     const { user } = useAppSelector((state) => state.auth);
     const { handleSuccessToast, handleErrorToast, showLoadingToast } = useToastHandler()
 
@@ -64,11 +69,6 @@ export default function DashboardPage() {
         fetchBookings,
         refetchBookings
     } = useBookings();
-
-    // Fetch bookings from API
-    // useEffect(() => {
-    //     dispatch(fetchBookings()).unwrap();
-    // }, [dispatch]);
 
     // Fetch bookings on component mount
     useEffect(() => {
@@ -125,7 +125,7 @@ export default function DashboardPage() {
                 setDeletedBookingId(null);
             }
         },
-        [dispatch, handleErrorToast, handleSuccessToast , showLoadingToast]
+        [dispatch, handleErrorToast, handleSuccessToast, showLoadingToast]
     );
 
     const handleDeleteBooking = useCallback((id: string) => {
@@ -185,6 +185,7 @@ export default function DashboardPage() {
         });
     }, [bookings, sortConfig]);
 
+
     const filteredBookings = useMemo(() => {
         return sortedBookings.filter((b) => {
             const matchesTab = activeTab === "ALL" || b.status === activeTab;
@@ -192,9 +193,23 @@ export default function DashboardPage() {
                 b.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 b.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 b.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase());
-            return matchesTab && matchesSearch;
+
+            // NEW: pickup date filter
+            const matchesPickupDate = !pickupDateFilter
+                ? true
+                : (() => {
+                    if (!b.pickupDate) return false;
+                    // normalize both to YYYY-MM-DD
+                    const bookingPickupDate = new Date(b.pickupDate)
+                        .toISOString()
+                        .split("T")[0];
+                    return bookingPickupDate === pickupDateFilter;
+                })();
+
+            return matchesTab && matchesSearch && matchesPickupDate;
         });
-    }, [sortedBookings, activeTab, searchTerm]);
+    }, [sortedBookings, activeTab, searchTerm, pickupDateFilter]);
+
 
     // Pagination logic
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -351,32 +366,111 @@ export default function DashboardPage() {
                             <p className="text-slate-600 mt-2">Manage and track all your bookings in one place</p>
                         </div>
                         <div className="flex items-center space-x-4 mt-4 lg:mt-0">
-                            <motion.button
+
+                            <div className="flex flex-col sm:flex-row sm:items-end md:items-center sm:justify-between gap-2">
+                                {/* Date filter field */}
+                                <div className="w-full sm:max-w-xs">
+                                    <div className="relative">
+                                        <InputField
+                                            label="" // label handled above
+                                            name="pickupDate"
+                                            type="date"
+                                            value={pickupDateFilter}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setPickupDateFilter(value);
+                                            }}
+                                            // required
+                                            className="
+                                            w-full
+                                            bg-white/80
+                                            border
+                                            border-slate-200
+                                            rounded-xl
+                                            pl-10
+                                            pr-3
+                                            py-2.5
+                                            text-sm
+                                            text-slate-900
+                                            placeholder:text-slate-400
+                                            shadow-sm
+                                            focus:outline-none
+                                            focus:ring-2
+                                            focus:ring-blue-200
+                                            focus:border-blue-500
+                                            transition-colors
+                                            "
+                                            icon={<Calendar className="w-4 h-4 text-slate-400" />}
+                                        />
+
+                                    </div>
+                                    <p className="mt-1 text-sm text-red-600">
+                                        Select a date to filter by pickup date.
+                                    </p>
+                                </div>
+
+                                {/* Filter button */}
+                                {/* <motion.button
+                                    whileHover={{ scale: 1.02, y: -1 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => setPickupDateFilter("")}
+                                    type="button"
+                                    className="
+                                        inline-flex
+                                        items-center
+                                        justify-center
+                                        space-x-2
+                                        bg-slate-900
+                                        text-white
+                                        px-5
+                                        py-2.5
+                                        rounded-xl
+                                        font-medium
+                                        shadow-sm
+                                        hover:shadow-lg
+                                        hover:bg-slate-800
+                                        transition-all
+                                        duration-200
+                                        border
+                                        border-slate-900/10
+                                        w-full
+                                        sm:w-auto
+                                        "
+                                >
+                                    <FiFilter className="w-8 h-4" />
+                                    <span>Reset Filter</span>
+                                </motion.button> */}
+                                <motion.div
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setPickupDateFilter("")}
+                                    className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-xl transition-all duration-200 flex items-center space-x-2"
+                                >
+                                    <FiFilter className="w-4 h-4" />
+                                    <span>Reset</span>
+                                </motion.div>
+                            </div>
+
+
+                            {/* <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-medium hover:shadow-lg transition-all duration-200"
                             >
                                 <FiDownload className="w-4 h-4" />
                                 <span>Export</span>
-                            </motion.button>
-                            <motion.button
+                            </motion.button> */}
+                            {/* <Link href="/bookings/new"> */}
+                            {/* <motion.div
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-medium hover:shadow-lg transition-all duration-200"
+                                onClick={() => setPickupDateFilter("")}
+                                className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-xl transition-all duration-200 flex items-center space-x-2"
                             >
                                 <FiFilter className="w-4 h-4" />
-                                <span>Filter</span>
-                            </motion.button>
-                            <Link href="/bookings/new">
-                                <motion.div
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-xl transition-all duration-200 flex items-center space-x-2"
-                                >
-                                    <FiPlus className="w-4 h-4" />
-                                    <span>New Booking</span>
-                                </motion.div>
-                            </Link>
+                                <span>Reset Filter</span>
+                            </motion.div> */}
+                            {/* </Link> */}
                         </div>
                     </div>
                 </motion.div>
