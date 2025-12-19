@@ -664,10 +664,20 @@ export default function BookingDetailPage() {
                                     <div className="p-4 border-t border-gray-200 bg-white">
                                         <p className="text-gray-600">
                                             This booking includes a rental from <strong>{booking.rentalCompany}</strong>.
-                                            <br /><br />
-                                            ➤ Pickup: {booking.pickupLocation} on {new Date(booking.pickupDate).toLocaleDateString()}
                                             <br />
-                                            ➤ Drop-off: {booking.dropoffLocation} on {new Date(booking.dropoffDate).toLocaleDateString()}
+                                            ➤ Pickup: {booking.pickupLocation} on {new Date(booking.pickupDate).toLocaleDateString('en-US', {
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                year: 'numeric',
+                                            })}
+
+                                            <br />
+                                            ➤ Drop-off: {booking.dropoffLocation} on {new Date(booking.dropoffDate).toLocaleDateString('en-US', {
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                year: 'numeric',
+                                            })}
+
                                             <br />
                                             ➤ Total amount: ${Number(booking.total).toFixed(2)}
                                             <br />
@@ -754,7 +764,11 @@ export default function BookingDetailPage() {
                                                 <FiMapPin className="mr-2 text-blue-500" /> Pickup Information
                                             </h3>
                                             <p className="text-gray-600"><strong>Location:</strong> {booking.pickupLocation}</p>
-                                            <p className="text-gray-600"><strong>Date:</strong> {booking.pickupDate}</p>
+                                            <p className="text-gray-600"><strong>Date:</strong> {new Date(booking.pickupDate).toLocaleDateString('en-US', {
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                year: 'numeric',
+                                            })}</p>
                                             <p className="text-gray-600"><strong>Time:</strong> {booking.pickupTime}</p>
                                         </div>
 
@@ -763,7 +777,11 @@ export default function BookingDetailPage() {
                                                 <FiMapPin className="mr-2 text-blue-500" /> Drop-off Information
                                             </h3>
                                             <p className="text-gray-600"><strong>Location:</strong> {booking.dropoffLocation}</p>
-                                            <p className="text-gray-600"><strong>Date:</strong> {booking.dropoffDate}</p>
+                                            <p className="text-gray-600"><strong>Date:</strong> {new Date(booking.dropoffDate).toLocaleDateString('en-US', {
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                year: 'numeric',
+                                            })}</p>
                                             <p className="text-gray-600"><strong>Time:</strong> {booking.dropoffTime}</p>
                                         </div>
                                     </div>
