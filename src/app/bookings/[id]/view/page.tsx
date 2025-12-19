@@ -177,6 +177,16 @@ export default function BookingDetailPage() {
         }
     }, [dispatch, user, handleErrorToast]);
 
+    // utils/date.ts
+    function formatYyyyMmDdToMmDdYyyy(dateString: string): string {
+        if (!dateString) return '';
+
+        const [year, month, day] = dateString.split('-'); // expects "YYYY-MM-DD"
+        if (!year || !month || !day) return dateString;   // fallback if format is different
+
+        return `${month}/${day}/${year}`;                 // "MM/DD/YYYY"
+    }
+
 
     // Update Note
     const handleUpdateNote = () => {
@@ -278,8 +288,8 @@ export default function BookingDetailPage() {
             total: booking.total,
             mco: booking.mco,
             payableAtPickup: booking.payableAtPickup,
-            pickupDate: booking.pickupDate,
-            dropoffDate: booking.dropoffDate,
+            pickupDate: formatYyyyMmDdToMmDdYyyy(booking.pickupDate),
+            dropoffDate:formatYyyyMmDdToMmDdYyyy(booking.dropoffDate),
             pickupTime: booking.pickupTime,
             dropoffTime: booking.dropoffTime,
             pickupLocation: booking.pickupLocation,
@@ -480,7 +490,6 @@ export default function BookingDetailPage() {
         }).replace(/(am|pm)/i, match => match.toUpperCase());
     };
 
-
     if (error) {
         return (
             <ErrorComponent
@@ -665,19 +674,9 @@ export default function BookingDetailPage() {
                                         <p className="text-gray-600">
                                             This booking includes a rental from <strong>{booking.rentalCompany}</strong>.
                                             <br />
-                                            ➤ Pickup: {booking.pickupLocation} on {new Date(booking.pickupDate).toLocaleDateString('en-US', {
-                                                month: '2-digit',
-                                                day: '2-digit',
-                                                year: 'numeric',
-                                            })}
-
+                                            ➤ Pickup: {formatYyyyMmDdToMmDdYyyy(booking.pickupDate)}
                                             <br />
-                                            ➤ Drop-off: {booking.dropoffLocation} on {new Date(booking.dropoffDate).toLocaleDateString('en-US', {
-                                                month: '2-digit',
-                                                day: '2-digit',
-                                                year: 'numeric',
-                                            })}
-
+                                            ➤ Drop-off: {booking.dropoffLocation} on {formatYyyyMmDdToMmDdYyyy(booking.dropoffDate)}
                                             <br />
                                             ➤ Total amount: ${Number(booking.total).toFixed(2)}
                                             <br />
@@ -764,11 +763,8 @@ export default function BookingDetailPage() {
                                                 <FiMapPin className="mr-2 text-blue-500" /> Pickup Information
                                             </h3>
                                             <p className="text-gray-600"><strong>Location:</strong> {booking.pickupLocation}</p>
-                                            <p className="text-gray-600"><strong>Date:</strong> {new Date(booking.pickupDate).toLocaleDateString('en-US', {
-                                                month: '2-digit',
-                                                day: '2-digit',
-                                                year: 'numeric',
-                                            })}</p>
+                                            <p className="text-gray-600"><strong>Date:</strong>  {formatYyyyMmDdToMmDdYyyy(booking.pickupDate)}
+                                            </p>
                                             <p className="text-gray-600"><strong>Time:</strong> {booking.pickupTime}</p>
                                         </div>
 
@@ -777,11 +773,8 @@ export default function BookingDetailPage() {
                                                 <FiMapPin className="mr-2 text-blue-500" /> Drop-off Information
                                             </h3>
                                             <p className="text-gray-600"><strong>Location:</strong> {booking.dropoffLocation}</p>
-                                            <p className="text-gray-600"><strong>Date:</strong> {new Date(booking.dropoffDate).toLocaleDateString('en-US', {
-                                                month: '2-digit',
-                                                day: '2-digit',
-                                                year: 'numeric',
-                                            })}</p>
+                                            <p className="text-gray-600"><strong>Date:</strong> {formatYyyyMmDdToMmDdYyyy(booking.dropoffDate)}
+                                            </p>
                                             <p className="text-gray-600"><strong>Time:</strong> {booking.dropoffTime}</p>
                                         </div>
                                     </div>
