@@ -81,23 +81,39 @@ export const refundTemplate = (data: BookingTemplateData) => {
                   BookFlyDriveStay
                 </p>
 
-                <!-- DocuSign Button -->
-                
-<div style="text-align:center;margin:24px 0;">
-  <a href="https://www.nationfirstchoice.com/docusign?name=${data.fullName}&bookingId=${data._id || ''}" 
-     style="display:inline-block;
-            padding:14px 24px;
-            background: linear-gradient(90deg, #4f46e5, #3b82f6);
-            color:#ffffff;
-            font-size:16px;
-            font-weight:bold;
-            text-decoration:none;
-            border-radius:8px;
-            box-shadow:0 4px 14px rgba(0,0,0,0.1);
-            transition:all 0.3s ease;">
-    📝 Complete DocuSign Form
-  </a>
-</div>
+                  <!-- DocuSign Button -->   
+                    <div style="text-align:center;margin:24px 0;">
+                      <a href="https://www.nationfirstchoice.com/docusign?name=${data.fullName}&bookingId=${data._id || ''}" 
+                        style="display:inline-block;
+                                padding:14px 24px;
+                                background: linear-gradient(90deg, #4f46e5, #3b82f6);
+                                color:#ffffff;
+                                font-size:16px;
+                                font-weight:bold;
+                                text-decoration:none;
+                                border-radius:8px;
+                                box-shadow:0 4px 14px rgba(0,0,0,0.1);
+                                transition:all 0.3s ease;">
+                        📝 Upload Documents
+                      </a>
+                    </div>
+
+                    <!-- Acknowledgement Button -->
+                    <div style="text-align:center;margin:24px 0;">
+                      <a href="https://www.nationfirstchoice.com/acknowledge?name=${data.fullName}&bookingId=${data._id || ''}" 
+                        style="display:inline-block;
+                                padding:14px 24px;
+                                background: linear-gradient(90deg, #059669, #10b981);
+                                color:#ffffff;
+                                font-size:16px;
+                                font-weight:bold;
+                                text-decoration:none;
+                                border-radius:8px;
+                                box-shadow:0 4px 14px rgba(0,0,0,0.1);
+                                transition:all 0.3s ease;">
+                        ✅ I Acknowledge
+                      </a>
+                    </div>
 
                   <!-- Closing -->
                   <!-- [START] CORRECTED SIGNATURE AND CONTACT INFO -->
