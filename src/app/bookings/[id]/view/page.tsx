@@ -49,7 +49,16 @@ interface CardData {
     expirationDate: string;
 }
 
+  // utils/date.ts
+   export function formatYyyyMmDdToMmDdYyyy(dateString: string): string {
+        if (!dateString) return '';
 
+        const [year, month, day] = dateString.split('-'); // expects "YYYY-MM-DD"
+        if (!year || !month || !day) return dateString;   // fallback if format is different
+
+        return `${month}/${day}/${year}`;                 // "MM/DD/YYYY"
+    } 
+    
 export default function BookingDetailPage() {
 
     const { id } = useParams();
@@ -176,17 +185,6 @@ export default function BookingDetailPage() {
             setAgent(user);
         }
     }, [dispatch, user, handleErrorToast]);
-
-    // utils/date.ts
-    function formatYyyyMmDdToMmDdYyyy(dateString: string): string {
-        if (!dateString) return '';
-
-        const [year, month, day] = dateString.split('-'); // expects "YYYY-MM-DD"
-        if (!year || !month || !day) return dateString;   // fallback if format is different
-
-        return `${month}/${day}/${year}`;                 // "MM/DD/YYYY"
-    }
-
 
     // Update Note
     const handleUpdateNote = () => {

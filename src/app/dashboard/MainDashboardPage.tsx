@@ -97,8 +97,6 @@ export default function DashboardPage() {
         }
     }, [refetchBookings, handleSuccessToast]);
 
-
-
     const cancelBooking = useCallback(
         async (id: string) => {
             const toastId = showLoadingToast("Booking Deleting...")
