@@ -272,7 +272,6 @@ export default function BookingDetailPage() {
             return { field: change.text, oldValue: null, newValue: null };
         });
 
-
         const emailData: BookingTemplateData = {
             _id: booking._id, // Include booking ID
             fullName: booking.fullName,
@@ -356,7 +355,6 @@ export default function BookingDetailPage() {
                     setTemplateType("VOUCHER");
                     break;
                 }
-
                 default:
                     handleErrorToast(`Email template for "${type}" is not yet implemented.`);
             }
@@ -430,13 +428,7 @@ export default function BookingDetailPage() {
         if (activeTab !== "files") return
 
         (async () => {
-            try {
                 await dispatch(fetchCustomerById(id as string)).unwrap();
-            } catch (error) {
-                handleErrorToast(
-                    error instanceof Error ? error.message : "Failed to load customer details"
-                );
-            }
         })();
 
     }, [activeTab, id, dispatch, handleErrorToast, customer]);
