@@ -57,7 +57,6 @@ export default function DashboardPage() {
     const [deletedBookingId, setDeletedBookingId] = useState<string | null>(null);
     const [pickupDateFilter, setPickupDateFilter] = useState<string>("");
 
-    console.log("pickupDateFilter =>", pickupDateFilter)
     const { user } = useAppSelector((state) => state.auth);
     const { handleSuccessToast, handleErrorToast, showLoadingToast } = useToastHandler()
 
