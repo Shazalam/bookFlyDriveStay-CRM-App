@@ -24,9 +24,18 @@ export interface Customer {
   __v: number;
 }
 
-interface CustomerResponse {
-  ok: boolean;
-  customer: Customer;
+// Matches your ApiResponse<T> shape from backend
+interface ApiResponseCustomer {
+  status: 'success' | 'error' | 'validation_error' | 'authentication_error' | 'authorization_error' | 'not_found' | 'rate_limited' | 'server_error';
+  message: string;
+  data?: {
+    customer: Customer;
+  };
+  error?: {
+    code: string;
+    details?: unknown;
+    stack?: string;
+  };
 }
 
 interface CustomerState {
@@ -41,30 +50,39 @@ const initialState: CustomerState = {
   error: null,
 };
 
-// Async thunk to fetch customer data
+// Async thunk to fetch customer by bookingId
 export const fetchCustomerById = createAsyncThunk<
-  Customer,            // return type
-  string,              // argument type
-  { rejectValue: string } // type of rejectWithValue
+  Customer,              // return type
+  string,                // argument type (bookingId)
+  { rejectValue: string } // rejectWithValue type
 >(
   'customer/fetchCustomerById',
-  async (customerId, { rejectWithValue }) => {
+  async (bookingId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`https://www.nationfirstchoice.com/api/customers/${customerId}`);
-
+      const response = await fetch(`https://www.nationfirstchoice.com/api/customers/${bookingId}`);
+      console.log("response =", response)
       if (!response.ok) {
-        throw new Error(`Failed to fetch customer: ${response.statusText}`);
+        // still try to read ApiResponse to get message
+        let fallbackMessage = `Failed to fetch customer: ${response.status}`;
+        try {
+          const errorBody: ApiResponseCustomer = await response.json();
+          fallbackMessage = errorBody.message || fallbackMessage;
+        } catch {
+          // ignore JSON parse errors
+        }
+        return rejectWithValue(fallbackMessage);
       }
 
-      const data: CustomerResponse = await response.json();
+      const data: ApiResponseCustomer = await response.json();
 
-      if (!data.ok) {
-        throw new Error('API returned error status');
+      if (data.status !== 'success' || !data.data?.customer) {
+        const message =
+          data.message || data.error?.code || 'Failed to fetch customer data';
+        return rejectWithValue(message);
       }
 
-      return data.customer;
+      return data.data.customer;
     } catch (error: unknown) {
-      // Properly type error
       let message = 'Failed to fetch customer data';
       if (error instanceof Error) message = error.message;
       return rejectWithValue(message);
@@ -76,11 +94,11 @@ const customerSlice = createSlice({
   name: 'customer',
   initialState,
   reducers: {
-    clearCustomer: (state) => {
+    clearCustomer(state) {
       state.customer = null;
       state.error = null;
     },
-    resetCustomerError: (state) => {
+    resetCustomerError(state) {
       state.error = null;
     },
   },
@@ -90,11 +108,14 @@ const customerSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchCustomerById.fulfilled, (state, action: PayloadAction<Customer>) => {
-        state.loading = false;
-        state.customer = action.payload;
-        state.error = null;
-      })
+      .addCase(
+        fetchCustomerById.fulfilled,
+        (state, action: PayloadAction<Customer>) => {
+          state.loading = false;
+          state.customer = action.payload;
+          state.error = null;
+        }
+      )
       .addCase(fetchCustomerById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? 'Failed to fetch customer';

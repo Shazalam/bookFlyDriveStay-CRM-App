@@ -25,7 +25,6 @@ import ImagePreviewModal from "@/components/docuSignPreviewModal";
 import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 import { fetchCurrentUser, User } from "@/app/store/slices/authSlice";
 
-
 // Define the FormattedBookingChange interface locally
 interface FormattedBookingChange {
     field: string;
@@ -49,16 +48,16 @@ interface CardData {
     expirationDate: string;
 }
 
-  // utils/date.ts
-   export function formatYyyyMmDdToMmDdYyyy(dateString: string): string {
-        if (!dateString) return '';
+// utils/date.ts
+export function formatYyyyMmDdToMmDdYyyy(dateString: string): string {
+    if (!dateString) return '';
 
-        const [year, month, day] = dateString.split('-'); // expects "YYYY-MM-DD"
-        if (!year || !month || !day) return dateString;   // fallback if format is different
+    const [year, month, day] = dateString.split('-'); // expects "YYYY-MM-DD"
+    if (!year || !month || !day) return dateString;   // fallback if format is different
 
-        return `${month}/${day}/${year}`;                 // "MM/DD/YYYY"
-    } 
-    
+    return `${month}/${day}/${year}`;                 // "MM/DD/YYYY"
+}
+
 export default function BookingDetailPage() {
 
     const { id } = useParams();
@@ -167,7 +166,6 @@ export default function BookingDetailPage() {
             })
             .catch((err) => handleErrorToast(err));
     };
-
 
     // Fetch current user using Redux thunk
     useEffect(() => {
@@ -287,7 +285,7 @@ export default function BookingDetailPage() {
             mco: booking.mco,
             payableAtPickup: booking.payableAtPickup,
             pickupDate: formatYyyyMmDdToMmDdYyyy(booking.pickupDate),
-            dropoffDate:formatYyyyMmDdToMmDdYyyy(booking.dropoffDate),
+            dropoffDate: formatYyyyMmDdToMmDdYyyy(booking.dropoffDate),
             pickupTime: booking.pickupTime,
             dropoffTime: booking.dropoffTime,
             pickupLocation: booking.pickupLocation,
@@ -426,7 +424,7 @@ export default function BookingDetailPage() {
     }, [id, booking?._id, dispatch, handleErrorToast]);
 
     useEffect(() => {
-        console.log("hello")
+
         if (!id) return;
         if (customer && customer?._id) return
         if (activeTab !== "files") return
@@ -1037,35 +1035,61 @@ export default function BookingDetailPage() {
 
                             {activeTab === "files" && (
                                 <div className="space-y-6">
-                                    {/* Loading State */}
+                                    {/* 1. Loading State (has highest priority) */}
                                     {customerLoading && (
                                         <div className="flex items-center justify-center py-12 bg-gray-50 rounded-xl border border-gray-200">
                                             <div className="text-center">
-                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3" />
                                                 <span className="text-gray-600">Loading customer data...</span>
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Error State */}
-                                    {customerError && (
-                                        <div className="p-6 bg-red-50 border border-red-200 rounded-xl">
-                                            <div className="flex items-center justify-center mb-3">
-                                                <FiClock className="text-red-500 mr-2" />
-                                                <span className="text-red-800">Error loading customer data</span>
-                                            </div>
-                                            <p className="text-red-700 text-sm text-center mb-4">{customerError}</p>
-                                            <button
-                                                onClick={() => dispatch(fetchCustomerById(id as string))}
-                                                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition"
-                                            >
-                                                Retry Loading
-                                            </button>
-                                        </div>
+                                    {/* 2. Error State (shown only when NOT loading and there IS an error) */}
+                                    {!customerLoading && customerError && (
+                                        (() => {
+                                            const errorText = customerError.toLowerCase();
+                                            const isNotFound =
+                                                errorText.includes("not found") ||
+                                                errorText.includes("no customer") ||
+                                                errorText.includes("404");
+
+                                            // Different styles for "not found" vs generic error
+                                            const containerClass = isNotFound
+                                                ? "p-6 bg-yellow-50 border border-yellow-200 rounded-xl"
+                                                : "p-6 bg-red-50 border border-red-200 rounded-xl";
+
+                                            const iconClass = isNotFound ? "text-yellow-500" : "text-red-500";
+                                            const titleClass = isNotFound ? "text-yellow-900" : "text-red-800";
+                                            const textClass = isNotFound ? "text-yellow-800" : "text-red-700";
+                                            const buttonBgClass = isNotFound ? "bg-yellow-600 hover:bg-yellow-700" : "bg-red-600 hover:bg-red-700";
+
+                                            return (
+                                                <div className={containerClass}>
+                                                    <div className="flex items-center justify-center mb-3">
+                                                        <FiClock className={`${iconClass} mr-2`} />
+                                                        <span className={titleClass}>
+                                                            {isNotFound ? "Customer not found" : "Error loading customer data"}
+                                                        </span>
+                                                    </div>
+
+                                                    <p className={`${textClass} text-sm text-center mb-4`}>
+                                                        {customerError}
+                                                    </p>
+
+                                                    <button
+                                                        onClick={() => dispatch(fetchCustomerById(id as string))}
+                                                        className={`w-full px-4 py-2 ${buttonBgClass} text-white rounded-lg text-sm transition`}
+                                                    >
+                                                        {isNotFound ? "Try Loading Again" : "Retry Loading"}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })()
                                     )}
 
-                                    {/* Customer Data Display */}
-                                    {customer && !customerLoading && (
+                                    {/* 3. Customer Data Display (only when we have data and no error and not loading) */}
+                                    {customer && !customerLoading && !customerError && (
                                         <>
                                             {/* ID Documents Section */}
                                             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -1077,74 +1101,94 @@ export default function BookingDetailPage() {
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                                     {/* Front Image */}
                                                     <div className="text-center">
-                                                        <div className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-300 shadow-md"
+                                                        <div
+                                                            className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-300 shadow-md flex items-center justify-center"
                                                             onClick={() => {
                                                                 if (customer.frontImage) {
                                                                     setSelectedImage(customer.frontImage);
-                                                                    setModalTitle('Front Document');
+                                                                    setModalTitle("Front Document");
                                                                     setIsDocuSignModalOpen(true);
                                                                 }
                                                             }}
                                                         >
-                                                            <Image
-                                                                src={customer.frontImage}
-                                                                alt="Front ID Document"
-                                                                fill
-                                                                className="object-cover hover:scale-105 transition-transform duration-300"
-                                                                onError={(e) => {
-                                                                    const target = e.target as HTMLImageElement;
-                                                                    target.src = '/api/placeholder/400/300';
-                                                                }}
-                                                            />
+                                                            {customer.frontImage ? (
+                                                                <Image
+                                                                    src={customer.frontImage}
+                                                                    alt="Front ID Document"
+                                                                    fill
+                                                                    className="object-cover hover:scale-105 transition-transform duration-300"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-gray-400 text-sm">No Front Document</span>
+                                                            )}
                                                         </div>
-                                                        <p className="mt-4 text-lg font-medium text-gray-800 bg-blue-50 py-2 rounded-lg">Front Document</p>
-                                                        <p className="text-sm text-gray-500 mt-1">Uploaded: {formatDate(customer.createdAt)}</p>
+
+                                                        <p className="mt-4 text-lg font-medium text-gray-800 bg-blue-50 py-2 rounded-lg">
+                                                            Front Document
+                                                        </p>
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            Uploaded: {formatDate(customer.createdAt)}
+                                                        </p>
                                                     </div>
 
                                                     {/* Back Image */}
                                                     <div className="text-center">
-                                                        <div className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-300 shadow-md"
+                                                        <div
+                                                            className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-300 shadow-md flex items-center justify-center"
                                                             onClick={() => {
                                                                 if (customer.backImage) {
                                                                     setSelectedImage(customer.backImage);
-                                                                    setModalTitle('Back Document');
+                                                                    setModalTitle("Back Document");
                                                                     setIsDocuSignModalOpen(true);
                                                                 }
                                                             }}
                                                         >
-                                                            <Image
-                                                                src={customer.backImage}
-                                                                alt="Back ID Document"
-                                                                fill
-                                                                className="object-cover hover:scale-105 transition-transform duration-300"
-                                                                onError={(e) => {
-                                                                    const target = e.target as HTMLImageElement;
-                                                                    target.src = '/api/placeholder/400/300';
-                                                                }}
-                                                            />
+                                                            {customer.backImage ? (
+                                                                <Image
+                                                                    src={customer.backImage}
+                                                                    alt="Back ID Document"
+                                                                    fill
+                                                                    className="object-cover hover:scale-105 transition-transform duration-300"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-gray-400 text-sm">No Back Document</span>
+                                                            )}
                                                         </div>
-                                                        <p className="mt-4 text-lg font-medium text-gray-800 bg-blue-50 py-2 rounded-lg">Back Document</p>
-                                                        <p className="text-sm text-gray-500 mt-1">Updated: {formatDate(customer.updatedAt)}</p>
+
+                                                        <p className="mt-4 text-lg font-medium text-gray-800 bg-blue-50 py-2 rounded-lg">
+                                                            Back Document
+                                                        </p>
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            Uploaded: {formatDate(customer.createdAt)}
+                                                        </p>
                                                     </div>
                                                 </div>
 
                                                 {/* Document Status */}
                                                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                                                     <div className="flex items-center">
-                                                        <FiCheckCircle className={`text-2xl mr-3 ${customer.acknowledged ? 'text-green-500' : 'text-yellow-500'
-                                                            }`} />
+                                                        <FiCheckCircle
+                                                            className={`text-2xl mr-3 ${customer.acknowledged ? "text-green-500" : "text-yellow-500"
+                                                                }`}
+                                                        />
                                                         <div>
-                                                            <span className="text-lg font-semibold text-gray-800">Document Status</span>
+                                                            <span className="text-lg font-semibold text-gray-800">
+                                                                Document Status
+                                                            </span>
                                                             <p className="text-sm text-gray-600">
-                                                                {customer.acknowledged ? 'Documents verified and approved' : 'Documents pending review'}
+                                                                {customer.acknowledged
+                                                                    ? "Documents verified and approved"
+                                                                    : "Documents pending review"}
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <span className={`px-4 py-2 rounded-full text-sm font-semibold ${customer.acknowledged
-                                                        ? 'bg-green-100 text-green-800 border border-green-200'
-                                                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                                                        }`}>
-                                                        {customer.acknowledged ? 'Verified' : 'Under Review'}
+                                                    <span
+                                                        className={`px-4 py-2 rounded-full text-sm font-semibold ${customer.acknowledged
+                                                                ? "bg-green-100 text-green-800 border border-green-200"
+                                                                : "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                                            }`}
+                                                    >
+                                                        {customer.acknowledged ? "Verified" : "Under Review"}
                                                     </span>
                                                 </div>
                                             </div>
@@ -1161,17 +1205,25 @@ export default function BookingDetailPage() {
                                                     <div className="space-y-4">
                                                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
                                                             <span className="text-gray-700 font-medium">Device Type:</span>
-                                                            <span className="text-gray-900 font-semibold capitalize">{customer.device}</span>
+                                                            <span className="text-gray-900 font-semibold capitalize">
+                                                                {customer.device}
+                                                            </span>
                                                         </div>
 
                                                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
                                                             <span className="text-gray-700 font-medium">Browser:</span>
-                                                            <span className="text-gray-900 font-semibold text-sm">{customer.browser}</span>
+                                                            <span className="text-gray-900 font-semibold text-sm">
+                                                                {customer.browser}
+                                                            </span>
                                                         </div>
 
                                                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
-                                                            <span className="text-gray-700 font-medium">Operating System:</span>
-                                                            <span className="text-gray-900 font-semibold">{customer.os}</span>
+                                                            <span className="text-gray-700 font-medium">
+                                                                Operating System:
+                                                            </span>
+                                                            <span className="text-gray-900 font-semibold">
+                                                                {customer.os}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1186,22 +1238,30 @@ export default function BookingDetailPage() {
                                                     <div className="space-y-4">
                                                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
                                                             <span className="text-gray-700 font-medium">Country:</span>
-                                                            <span className="text-gray-900 font-semibold">{customer.location.country}</span>
+                                                            <span className="text-gray-900 font-semibold">
+                                                                {customer.location.country}
+                                                            </span>
                                                         </div>
 
                                                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
                                                             <span className="text-gray-700 font-medium">Region:</span>
-                                                            <span className="text-gray-900 font-semibold">{customer.location.region}</span>
+                                                            <span className="text-gray-900 font-semibold">
+                                                                {customer.location.region}
+                                                            </span>
                                                         </div>
 
                                                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
                                                             <span className="text-gray-700 font-medium">City:</span>
-                                                            <span className="text-gray-900 font-semibold">{customer.location.city}</span>
+                                                            <span className="text-gray-900 font-semibold">
+                                                                {customer.location.city}
+                                                            </span>
                                                         </div>
 
                                                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
                                                             <span className="text-gray-700 font-medium">Zip Code:</span>
-                                                            <span className="text-gray-900 font-semibold">{customer.location.zipcode}</span>
+                                                            <span className="text-gray-900 font-semibold">
+                                                                {customer.location.zipcode}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1218,15 +1278,21 @@ export default function BookingDetailPage() {
                                                     <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                                                         <div className="flex items-center mb-3">
                                                             <FiNavigation className="text-blue-500 mr-2" />
-                                                            <span className="text-lg font-medium text-gray-800">IP Address</span>
+                                                            <span className="text-lg font-medium text-gray-800">
+                                                                IP Address
+                                                            </span>
                                                         </div>
-                                                        <p className="text-2xl font-bold text-gray-900 text-center font-mono">{customer.ip}</p>
+                                                        <p className="text-2xl font-bold text-gray-900 text-center font-mono">
+                                                            {customer.ip}
+                                                        </p>
                                                     </div>
 
                                                     <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                                                         <div className="flex items-center mb-3">
                                                             <FiCreditCard className="text-green-500 mr-2" />
-                                                            <span className="text-lg font-medium text-gray-800">Session ID</span>
+                                                            <span className="text-lg font-medium text-gray-800">
+                                                                Session ID
+                                                            </span>
                                                         </div>
                                                         <p className="text-sm font-mono text-gray-700 text-center break-all bg-gray-100 p-2 rounded">
                                                             {customer.sessionId}
@@ -1234,7 +1300,6 @@ export default function BookingDetailPage() {
                                                     </div>
                                                 </div>
 
-                                                {/* Timestamps */}
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                                                     <div className="bg-white rounded-lg p-4 border border-gray-200">
                                                         <div className="flex items-center justify-between">
@@ -1257,13 +1322,16 @@ export default function BookingDetailPage() {
                                         </>
                                     )}
 
-                                    {/* No Customer Data State */}
+                                    {/* 4. No Customer Data (no error, not loading, no customer) */}
                                     {!customer && !customerLoading && !customerError && (
                                         <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
                                             <FiFileText className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                                            <h3 className="text-2xl font-semibold text-gray-900 mb-3">No Customer Data Available</h3>
+                                            <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                                                No Customer Data Available
+                                            </h3>
                                             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                                                Customer session information, ID documents, and device details will appear here once the data is loaded.
+                                                Customer session information, ID documents, and device details will
+                                                appear here once the data is loaded.
                                             </p>
                                             <button
                                                 onClick={() => dispatch(fetchCustomerById(id as string))}
@@ -1276,6 +1344,8 @@ export default function BookingDetailPage() {
                                     )}
                                 </div>
                             )}
+
+
 
                             <div className="flex items-center gap-3 justify-start mt-5">
                                 {/* New Booking Button */}
