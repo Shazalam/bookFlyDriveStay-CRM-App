@@ -1,6 +1,7 @@
 import mongoose, { Mongoose } from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
+console.log("MONGODB =", MONGODB_URI)
 if (!MONGODB_URI) throw new Error("⚠️ Please define MONGODB_URI");
 
 // ✅ Extend global type to store cached connection

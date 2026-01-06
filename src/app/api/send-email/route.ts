@@ -1,39 +1,63 @@
 import { sendEmail } from "@/lib/email/sendEmail";
-import { apiResponse } from "@/lib/utils/apiResponse";
+import { apiSuccess, apiError, ErrorCode } from "@/lib/utils/apiResponse";
+import logger from "@/lib/utils/logger";
 
 export async function POST(req: Request) {
   try {
     const { to, subject, html } = await req.json();
 
-    // ✅ Basic validation
+    logger.info("Email send request received", { to, subject });
+
+    // -----------------------------
+    // Validation
+    // -----------------------------
     if (!to || !subject || !html) {
-      return apiResponse(
-        { message: "Missing required fields: to, subject, html" },
+      logger.warn("Email send failed — missing required fields", { to, subject });
+
+      return apiError(
+        ErrorCode.REQUIRED_FIELD,
+        "Missing required fields: to, subject, html",
         400
       );
     }
 
-    // ✅ Simple email format validation
+    // -----------------------------
+    // Email format validation
+    // -----------------------------
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(to)) {
-      return apiResponse({ message: "Invalid recipient email address" }, 400);
+      logger.warn("Email send failed — invalid recipient email", { to });
+
+      return apiError(
+        ErrorCode.INVALID_EMAIL,
+        "Invalid recipient email address",
+        400
+      );
     }
 
-    // ✅ Send email
+    // -----------------------------
+    // Send email
+    // -----------------------------
     await sendEmail(to, subject, html);
 
-    return apiResponse({ message: "Email sent successfully" }, 200);
-  } catch (error: unknown) {
-    console.error("❌ Email API error:", error);
+    logger.info("Email sent successfully", { to, subject });
 
-    return apiResponse(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Unexpected error while sending email",
-      },
-      500
+    return apiSuccess(
+      null,
+      "Email sent successfully",
+      200
+    );
+
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unexpected error";
+
+    logger.error("Failed to send email", { error: message });
+
+    return apiError(
+      ErrorCode.EXTERNAL_SERVICE_ERROR,
+      "Failed to send email. Please try again later.",
+      500,
+      process.env.NODE_ENV === "development" ? message : undefined
     );
   }
 }
