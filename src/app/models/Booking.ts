@@ -48,6 +48,7 @@ export interface IBooking extends Document {
   // Add notes field
   notes: INote[];
   isDeleted: boolean; // 👈 added soft-delete flag
+  changes?: { text: string }[]
 
 }
 
@@ -129,7 +130,8 @@ const BookingSchema = new Schema<IBooking>(
       required: true // ✅ Make it required
     },
   },
-  { timestamps: true }
+  { timestamps: true },
+ 
 );
 
 export default mongoose.models.Booking || mongoose.model<IBooking>("Booking", BookingSchema);

@@ -1,50 +1,54 @@
 // bookingSlice.ts
+import { handleAxiosError } from "@/lib/utils/handleAxiosError";
+import { ApiResponse } from "@/types/api";
+import { Booking } from "@/types/booking";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import axios from "axios";
 
-export interface Booking {
-  _id?: string;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  rentalCompany: string;
-  confirmationNumber: string;
-  vehicleImage?: string;
-  total?: string;
-  mco?: string;
-  refundAmount?: string,
-  payableAtPickup?: string;
-  pickupDate: string;
-  dropoffDate: string;
-  pickupTime: string;
-  dropoffTime: string;
-  pickupLocation: string;
-  dropoffLocation: string;
-  cardLast4: string;
-  expiration: string;
-  billingAddress: string;
-  salesAgent: string;
-  dateOfBirth?: string;
-   agentId?: string;
-  status: "BOOKED" | "MODIFIED" | "CANCELLED" | "ALL";
-  createdAt: string;
-  modificationFee: { charge: string }[]; // Change to array
-  timeline?: {
-    date: string;
-    message: string;
-    agentName: string;
-    changes: { text: string }[];
-  }[];
-  // Add notes field
-  notes: {
-    _id: string;
-    text: string;
-    agentName: string;
-    createdAt: string;
-    createdBy?: string;
-  }[];
+// export interface Booking {
+//   _id?: string;
+//   fullName: string;
+//   email: string;
+//   phoneNumber: string;
+//   rentalCompany: string;
+//   confirmationNumber: string;
+//   vehicleImage?: string;
+//   total?: string;
+//   mco?: string;
+//   refundAmount?: string,
+//   payableAtPickup?: string;
+//   pickupDate: string;
+//   dropoffDate: string;
+//   pickupTime: string;
+//   dropoffTime: string;
+//   pickupLocation: string;
+//   dropoffLocation: string;
+//   cardLast4: string;
+//   expiration: string;
+//   billingAddress: string;
+//   salesAgent: string;
+//   dateOfBirth?: string;
+//   agentId?: string;
+//   status: "BOOKED" | "MODIFIED" | "CANCELLED" | "ALL";
+//   createdAt: string;
+//   modificationFee: { charge: string }[]; // Change to array
+//   timeline?: {
+//     date: string;
+//     message: string;
+//     agentName: string;
+//     changes: { text: string }[];
+//   }[];
+//   // Add notes field
+//   notes: {
+//     _id: string;
+//     text: string;
+//     agentName: string;
+//     createdAt: string;
+//     createdBy?: string;
+//   }[];
 
-  changes: { text: string }[]
-}
+//   changes: { text: string }[]
+// }
 
 interface BookingState {
   currentBooking: Booking | null;
@@ -73,21 +77,17 @@ export const fetchBookings = createAsyncThunk<
   { rejectValue: string }
 >("booking/fetchAll", async (_, { rejectWithValue }) => {
   try {
-    const res = await fetch("/api/bookings", {
-      method: "GET",
-      credentials: "include",
-    });
+    const { data } = await axios.get<ApiResponse<{ bookings: Booking[] }>>("/api/bookings");
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch bookings");
+    if (!data.success) {
+      return rejectWithValue(data?.error?.message)
     }
 
-    const data = await res.json();
-    console.log("fetchBooking =>", data)
-    return data.bookings || [];
+    // return data.bookings || [];
+    const bookingsListData = data?.data?.bookings ?? []
+    return bookingsListData;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Error loading bookings";
-    return rejectWithValue(message);
+    return rejectWithValue(handleAxiosError(err, "fetch bookings failed"));
   }
 });
 
@@ -106,22 +106,20 @@ export const saveBooking = createAsyncThunk<
       Object.fromEntries(Object.entries(formData).filter(([key]) => key !== '_id')) :
       formData;
 
-    const res = await fetch(url, {
+    const { data } = await axios.request<ApiResponse<{ booking: Booking }>>({
+      url,
       method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dataToSend),
+      data: JSON.stringify(dataToSend),
     });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || "Failed to save booking");
+    if (!data.success) {
+      return rejectWithValue(data.error.message);
     }
 
-    const data = await res.json();
-    return data;
+    // data.data = { booking: Booking }
+    return data.data.booking;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Error saving booking";
-    return rejectWithValue(message);
+    return rejectWithValue(handleAxiosError(err, "Failed to save booking"));
   }
 });
 
@@ -132,17 +130,36 @@ export const fetchBookingById = createAsyncThunk<
   { rejectValue: string }
 >("booking/fetchById", async (id, { rejectWithValue }) => {
   try {
-    const res = await fetch(`/api/bookings/${id}`, { credentials: "include" });
+    const { data } = await axios.get<ApiResponse<{ booking: Booking }>>(`/api/bookings/${id}`);
 
-    if (!res.ok) {
-      throw new Error("Failed to load booking");
+    if (!data.success) {
+      return rejectWithValue(data.error.message);
     }
 
-    const data = await res.json();
-    return data.booking as Booking;
+    // data.data = { booking: Booking }
+    return data.data.booking;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Error loading booking";
-    return rejectWithValue(message);
+    return rejectWithValue(handleAxiosError(err, "Failed to fetch booking"));
+  }
+});
+
+// --- DELETE BOOKING (Soft Delete) ---
+export const deleteBooking = createAsyncThunk<
+  string, // Return deleted booking ID
+  string, // bookingId
+  { rejectValue: string }
+>("booking/delete", async (bookingId, { rejectWithValue }) => {
+  try {
+    const {data} = await axios.delete<ApiResponse<{ bookingId: string }>>(`/api/bookings/${bookingId}`);
+
+    if (!data.success) {
+      return rejectWithValue(data.error.message);
+    }
+console.log("soft delete = ",data)
+    // data.data = { booking: Booking }
+    return data.data.bookingId;
+  } catch (err) {
+        return rejectWithValue(handleAxiosError(err, "Failed to fetch booking"));
   }
 });
 
@@ -154,21 +171,16 @@ export const addNote = createAsyncThunk<
   { rejectValue: string }
 >("booking/addNote", async ({ bookingId, text }, { rejectWithValue }) => {
   try {
-    const res = await fetch(`/api/bookings/${bookingId}/notes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
+    const { data } = await axios.post<ApiResponse<{ booking: Booking }>>(`/api/bookings/${bookingId}/notes`, { text });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || "Failed to add note");
+    if (!data.success) {
+      return rejectWithValue(data.error.message);
     }
 
-    const data = await res.json();
-    return data.booking as Booking;
+    // data.data = { booking: Booking }
+    return data.data.booking;
   } catch (err) {
-    return rejectWithValue(err instanceof Error ? err.message : "Error adding note");
+    return rejectWithValue(handleAxiosError(err, "Failed to add note in booking"));
   }
 });
 
@@ -178,22 +190,16 @@ export const updateNote = createAsyncThunk<
   { rejectValue: string }
 >("booking/updateNote", async ({ bookingId, noteId, text }, { rejectWithValue }) => {
   try {
-    const res = await fetch(`/api/bookings/${bookingId}/notes/${noteId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
+    const {data} = await axios.put<ApiResponse<{ booking: Booking }>>(`/api/bookings/${bookingId}/notes/${noteId}`, { text });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || "Failed to update note");
+    if (!data.success) {
+      return rejectWithValue(data.error.message);
     }
 
-    const data = await res.json();
-    return data.booking as Booking;
+    // data.data = { booking: Booking }
+    return data.data.booking;
   } catch (err) {
-    return rejectWithValue(err instanceof Error ? err.message : "Error updating note");
-  }
+    return rejectWithValue(handleAxiosError(err, "Failed to update note in booking"));  }
 });
 
 export const deleteNote = createAsyncThunk<
@@ -202,47 +208,18 @@ export const deleteNote = createAsyncThunk<
   { rejectValue: string }
 >("booking/deleteNote", async ({ bookingId, noteId }, { rejectWithValue }) => {
   try {
-    const res = await fetch(`/api/bookings/${bookingId}/notes/${noteId}`, {
-      method: "DELETE",
-    });
+    const {data} = await axios.delete<ApiResponse<{ booking: Booking }>>(`/api/bookings/${bookingId}/notes/${noteId}`);
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || "Failed to delete note");
+    if (!data.success) {
+      return rejectWithValue(data.error.message);
     }
 
-    const data = await res.json();
-    return data.booking as Booking;
+    // data.data = { booking: Booking }
+    return data.data.booking;
   } catch (err) {
-    return rejectWithValue(err instanceof Error ? err.message : "Error deleting note");
-  }
+    return rejectWithValue(handleAxiosError(err, "Failed to delete note from booking"));  }
 });
 
-// --- DELETE BOOKING (Soft Delete) ---
-export const deleteBooking = createAsyncThunk<
-  string, // Return deleted booking ID
-  string, // bookingId
-  { rejectValue: string }
->("booking/delete", async (bookingId, { rejectWithValue }) => {
-  try {
-    const res = await fetch(`/api/bookings/${bookingId}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Failed to delete booking");
-    }
-
-    return bookingId; // return the deleted booking ID
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Error deleting booking";
-    return rejectWithValue(message);
-  }
-});
 
 
 const bookingSlice = createSlice({
@@ -359,13 +336,13 @@ const bookingSlice = createSlice({
       })
       // -------------------- DELETE BOOKING --------------------
       .addCase(deleteBooking.pending, (state) => {
-        state.listLoading= true;
+        state.listLoading = true;
         state.error = null;
         state.operation = "pending";
       })
       .addCase(deleteBooking.fulfilled, (state, action: PayloadAction<string>) => {
         state.bookingsList = state.bookingsList.filter(
-          (b) => b._id !== action.payload
+          (b) => b.id !== action.payload
         );
         state.listLoading = false;
         state.operation = "succeeded";

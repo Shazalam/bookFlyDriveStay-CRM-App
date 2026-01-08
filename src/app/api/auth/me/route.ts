@@ -32,6 +32,8 @@ export async function GET(req: Request) {
         name?: string;
         role?: string;
       };
+
+      console.log("decode =",decoded)
     } catch (err) {
       logger.error(`Token verification failed: ${(err as Error).message}`);
 

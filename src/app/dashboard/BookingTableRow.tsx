@@ -1,4 +1,4 @@
-import { Booking } from "../store/slices/bookingSlice";
+
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -17,6 +17,8 @@ import {
 import { IoCarSport } from "react-icons/io5";
 import DetailCard from "./BookingDetailCard";
 import { formatYyyyMmDdToMmDdYyyy } from "../bookings/[id]/view/page";
+import { Booking } from "@/types/booking";
+import { useAppSelector } from "../store/hooks";
 
 type BookingStatus = Booking["status"];
 // Enhanced Booking Row Component
@@ -37,6 +39,8 @@ export default function BookingRow({
     getStatusIcon,
     getStatusColor
 }: BookingRowProps) {
+    // Select auth state from redux
+    const { user } = useAppSelector((s) => s.auth);
     return (
         <>
             <motion.tr
@@ -63,11 +67,17 @@ export default function BookingRow({
                         <div className="ml-4">
                             <div className="text-sm font-semibold text-slate-900">{booking.fullName}</div>
                             <div className="text-sm text-slate-500">
-                                {/* {(() => {
-                                    const [localPart, domain] = booking.email.split('@');
-                                    return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
-                                })()} */}
-                                {booking?.email}
+                                {
+                                user && user.role === "SuperAdmin"
+                                    ? booking?.email
+                                    : 
+                                    (() => {
+                                        if (!booking?.email) return "";
+                                        const [localPart, domain] = booking.email.split("@");
+                                        return `${localPart.slice(0, 2)}******${localPart.slice(-3)}@${domain}`;
+                                    })()
+                                }
+
                             </div>
                         </div>
                     </div>
@@ -81,7 +91,7 @@ export default function BookingRow({
                 <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-slate-900">
                         {formatYyyyMmDdToMmDdYyyy(booking.pickupDate)}
-                        {}
+                        { }
                     </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -97,7 +107,7 @@ export default function BookingRow({
                     <div className="flex items-center gap-5">
                         <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                             <Link
-                                href={`/bookings/new?id=${booking._id}`}
+                                href={`/bookings/new?id=${booking.id}`}
                                 className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
                                 onClick={(e) => e.stopPropagation()}
                             >
@@ -108,7 +118,7 @@ export default function BookingRow({
                         {booking.status !== "CANCELLED" && (
                             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                                 <Link
-                                    href={`/bookings/modification?id=${booking._id}`}
+                                    href={`/bookings/modification?id=${booking.id}`}
                                     className="text-amber-600 hover:text-amber-800 p-2 rounded-lg hover:bg-amber-50 transition-all duration-200"
                                     onClick={(e) => e.stopPropagation()}
                                 >
@@ -153,7 +163,7 @@ export default function BookingRow({
                                     title="Customer Details"
                                     items={[
                                         // { label: "Phone", value: `******${booking.phoneNumber.slice(-4)}` },
-                                        { label: "Phone", value:booking.phoneNumber },
+                                        { label: "Phone", value: booking.phoneNumber },
                                         // {
                                         //     label: "Email", value: (() => {
                                         //         const [localPart, domain] = booking.email.split('@');
@@ -216,7 +226,7 @@ export default function BookingRow({
                                 <motion.div
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => onDelete(booking._id!)} // <-- Call delete function
+                                    onClick={() => onDelete(booking.id!)} // <-- Call delete function
                                     className="inline-flex items-center space-x-2 bg-gray-800 hover:bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 cursor-pointer"
                                 >
                                     <FiTrash2 className="w-4 h-4" />
@@ -225,7 +235,7 @@ export default function BookingRow({
 
                                 {/* ✅ View & Cancel Buttons (Right Side) */}
                                 <div className="flex flex-wrap gap-3 justify-end">
-                                    <Link href={`/bookings/${booking._id}/view`}>
+                                    <Link href={`/bookings/${booking.id}/view`}>
                                         <motion.div
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
@@ -237,7 +247,7 @@ export default function BookingRow({
                                     </Link>
 
                                     {booking.status !== "CANCELLED" && (
-                                        <Link href={`/bookings/cancellation?id=${booking._id}`}>
+                                        <Link href={`/bookings/cancellation?id=${booking.id}`}>
                                             <motion.div
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}

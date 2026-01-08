@@ -1,45 +1,48 @@
 import { handleAxiosError } from "@/lib/utils/handleAxiosError";
+import { ApiResponse } from "@/types/api";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 
 export interface RentalCompany {
-    _id: string;
-    name: string;
-    createdAt: string;
-    updatedAt: string;
+  _id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface RentalCompanyState {
-    rentalCompanies: RentalCompany[];
-    loading: boolean;
-    error: string | null;
+  rentalCompanies: RentalCompany[];
+  loading: boolean;
+  error: string | null;
 }
 
 const initialState: RentalCompanyState = {
-    rentalCompanies: [],
-    loading: false,
-    error: null,
+  rentalCompanies: [],
+  loading: false,
+  error: null,
 }
 
 // Async thunk to fetch rental companies
 export const fetchRentalCompanies = createAsyncThunk<
-    RentalCompany[],           // return type
-    void,                      // argument type
-    { rejectValue: string }      // thunkAPI types
+  RentalCompany[],           // return type
+  void,                      // argument type
+  { rejectValue: string }      // thunkAPI types
 >(
-    "rentalCompanies/fetchAll",
-    async (_, { rejectWithValue  }) => {
-        try {
-            const { data } = await axios.get("/api/rental-companies");
-            if (!data.success) {
-                return rejectWithValue(data.message || "Failed to fetch rental companies");
-            }
-            return data.data;
+  "rentalCompanies/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get<ApiResponse<RentalCompany[]>>("/api/rental-companies", {
+        withCredentials: true,
+      });
 
-        } catch (error) {
-            return rejectWithValue(handleAxiosError(error,"Failed to fetch rental companies"));
-        }
+      if (!data.success) {
+        return rejectWithValue(data.error.message);
+      }
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(handleAxiosError(error, "Failed to fetch rental companies"));
     }
+  }
 );
 
 // 🧩 POST add new company
@@ -49,9 +52,9 @@ export const addRentalCompany = createAsyncThunk<
   { rejectValue: string }
 >("rentalCompanies/add", async (payload, { rejectWithValue }) => {
   try {
-    const { data } = await axios.post("/api/rental-companies", payload);
+    const { data } = await axios.post<ApiResponse<RentalCompany>>("/api/rental-companies", payload);
     if (!data.success) {
-      return rejectWithValue(data.message || "Failed to add company");
+      return rejectWithValue(data?.error?.message || "Failed to add company");
     }
 
     return data.data;
@@ -59,7 +62,6 @@ export const addRentalCompany = createAsyncThunk<
     return rejectWithValue(handleAxiosError(err, "Failed to add company"));
   }
 });
-
 
 const rentalCompanySlice = createSlice({
   name: "rentalCompanies",

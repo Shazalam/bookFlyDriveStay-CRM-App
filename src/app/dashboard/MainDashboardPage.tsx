@@ -13,8 +13,7 @@ import {
     FiAlertCircle,
     FiXCircle,
     FiPlus,
-    FiFilter,
-    FiDownload,
+    FiFilter
 } from "react-icons/fi";
 
 import { IoCarSport } from "react-icons/io5";
@@ -22,15 +21,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import ConfirmDeleteBookingModal from "@/components/ConfirmDeleteBookingModal";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import LoadingScreen from "@/components/LoadingScreen";
-import { Booking, deleteBooking } from "../store/slices/bookingSlice";
+import { deleteBooking } from "../store/slices/bookingSlice";
 import { useToastHandler } from "@/lib/utils/hooks/useToastHandler";
 import BookingRow from "./BookingTableRow";
 import ErrorComponent from "@/components/ErrorComponent";
 import { useBookings } from "@/lib/utils/hooks/useBookings";
 import InputField from "@/components/InputField";
 import { Calendar } from "lucide-react";
+import { Booking } from "@/types/booking";
 
-type BookingStatus = Booking["status"];
+type BookingStatus = Booking["status"]
 type SortableField =
     | "createdAt"
     | "fullName"
@@ -179,11 +179,9 @@ export default function DashboardPage() {
             if (typeof aValue === 'number' && typeof bValue === 'number') {
                 return direction === "ascending" ? aValue - bValue : bValue - aValue;
             }
-
             return 0;
         });
     }, [bookings, sortConfig]);
-
 
     const filteredBookings = useMemo(() => {
         return sortedBookings.filter((b) => {
@@ -208,7 +206,6 @@ export default function DashboardPage() {
             return matchesTab && matchesSearch && matchesPickupDate;
         });
     }, [sortedBookings, activeTab, searchTerm, pickupDateFilter]);
-
 
     // Pagination logic
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -250,6 +247,7 @@ export default function DashboardPage() {
         const todayISODate = today.toISOString().split("T")[0]
 
         const totalRevenue = bookings.reduce((sum, booking) => {
+            if (!booking.createdAt) return sum; // skip if createdAt is missing
 
             const createDate = new Date(booking.createdAt).toISOString().split("T")[0]
 
@@ -647,10 +645,10 @@ export default function DashboardPage() {
                                     // Data Rows
                                     currentItems.map((booking) => (
                                         <BookingRow
-                                            key={booking._id}
+                                            key={booking.id}
                                             booking={booking}
-                                            expanded={expandedRow === booking._id}
-                                            onExpand={() => setExpandedRow(expandedRow === booking._id ? null : booking._id ?? null)}
+                                            expanded={expandedRow === booking.id}
+                                            onExpand={() => setExpandedRow(expandedRow === booking.id ? null : booking.id ?? null)}
                                             onDelete={handleDeleteBooking}
                                             getStatusIcon={getStatusIcon}
                                             getStatusColor={getStatusColor}

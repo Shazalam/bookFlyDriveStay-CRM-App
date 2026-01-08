@@ -98,12 +98,12 @@
 //           }
 //         ],
 //     };
-    
+
 //     const bookingData = new Booking(payload)
 
 //     // ✅ Save booking
 //     const booking = await bookingData.save();
-    
+
 //     return apiResponse({ success: true, booking }, 201);
 
 //     // ✅ Save booking
@@ -166,13 +166,22 @@ export async function GET(req: Request) {
       createdAt: -1,
     });
 
+    // Convert _id -> id for response
+    const formattedBookings = bookings.map((b) => {
+      const obj = b.toObject();        // convert Mongoose document to plain JS object
+      obj.id = obj._id.toString();     // add id
+      delete obj._id;                  // optional: remove _id from response
+      return obj;
+    });
+
+
     logger.info("Bookings fetched successfully", {
-      count: bookings.length,
+      count: formattedBookings.length,
     });
 
     return apiSuccess(
       {
-        bookings,
+        bookings:formattedBookings,
       },
       "Bookings fetched successfully",
       200
@@ -192,11 +201,6 @@ export async function GET(req: Request) {
   }
 }
 
-
-
-
-
-// ✅ Required fields for booking
 // ✅ Required fields for booking
 const REQUIRED_FIELDS = [
   "fullName",
@@ -302,13 +306,13 @@ export async function POST(req: Request) {
         Array.isArray(data.timeline) && data.timeline.length > 0
           ? data.timeline
           : [
-              {
-                date: new Date().toISOString(),
-                agentName: decoded.name || "",
-                message: "New booking created",
-                changes: [],
-              },
-            ],
+            {
+              date: new Date().toISOString(),
+              agentName: decoded.name || "",
+              message: "New booking created",
+              changes: [],
+            },
+          ],
     };
 
     // -----------------------------

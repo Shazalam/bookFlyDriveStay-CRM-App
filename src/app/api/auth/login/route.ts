@@ -70,6 +70,7 @@ export async function POST(req: Request) {
     const token = signToken({
       id: agent._id,
       email: agent.email,
+      name:agent.name,
       role: agent.role,
     });
 

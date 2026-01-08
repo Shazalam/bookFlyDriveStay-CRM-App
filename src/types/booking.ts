@@ -10,7 +10,7 @@ export interface TimelineEntry {
 }
 
 export interface Booking {
-  id: string,
+  id?: string,
   fullName: string;
   email: string;
   phoneNumber: string;
@@ -32,7 +32,8 @@ export interface Booking {
   expiration: string;
   billingAddress: string;
   salesAgent: string;
-  status: "BOOKED" | "MODIFIED" | "CANCELLED";
+  agentId?: string;
+  status: "BOOKED" | "MODIFIED" | "CANCELLED" | "ALL";
   dateOfBirth?: string;
   notes?: {
     _id: string;
@@ -46,30 +47,10 @@ export interface Booking {
   giftCode?: string;
   expirationDate?: string;
   customerName?: string;
+  createdAt: string | number | Date;
 }
 
-export const editableGroups = {
-  Customer: ["fullName", "email", "phoneNumber"],
-  Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],
-  "Locations & Dates": [
-    "pickupLocation",
-    "dropoffLocation",
-    "pickupDate",
-    "dropoffDate",
-    "pickupTime",
-    "dropoffTime",
-  ],
-  "Payment Info": [
-    "total",
-    "payableAtPickup",
-    "mco",
-    "cardLast4",
-    "expiration",
-    "billingAddress",
-  ],
-};
-
-export const emptyForm: Booking = {
+export const emptyForm = {
   id: "",
   fullName: "",
   email: "",
@@ -95,6 +76,29 @@ export const emptyForm: Booking = {
   status: "MODIFIED",
   dateOfBirth: "",
 };
+
+export const editableGroups = {
+  Customer: ["fullName", "email", "phoneNumber"],
+  Vehicle: ["rentalCompany", "confirmationNumber", "vehicleImage"],
+  "Locations & Dates": [
+    "pickupLocation",
+    "dropoffLocation",
+    "pickupDate",
+    "dropoffDate",
+    "pickupTime",
+    "dropoffTime",
+  ],
+  "Payment Info": [
+    "total",
+    "payableAtPickup",
+    "mco",
+    "cardLast4",
+    "expiration",
+    "billingAddress",
+  ],
+};
+
+
 
 // types/booking.ts
 export interface FormattedBookingChange {
@@ -122,7 +126,7 @@ export interface CardData {
 export type EmailTemplateType = "BOOKED" | "MODIFIED" | "CANCELLED" | "REFUND" | "VOUCHER" | "GENERAL";
 
 export interface BookingFormWrapperProps {
-  searchParams: {[key:string]: string | string[] | undefined}
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 export const rentalCompanies = [

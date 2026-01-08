@@ -19,7 +19,6 @@ const initialState: AuthState = {
   success: false,
 };
 
-
 export const registerUser = createAsyncThunk<
   User,
   { name: string; email: string; password: string },
@@ -66,8 +65,8 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-     const res =  await axios.post('/api/auth/logout');
-     console.log("response logout =", res)
+      const res = await axios.post('/api/auth/logout');
+      console.log("response logout =", res)
     } catch (err) {
       return rejectWithValue(handleAxiosError(err, "Logout failed"));
     }
@@ -155,9 +154,19 @@ const authSlice = createSlice({
       })
 
       // LOGOUT
+      .addCase(logoutUser.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
       .addCase(logoutUser.fulfilled, (s) => {
+        s.loading = false;
+        s.error = null;
         s.user = null;
         s.success = false;
+      })
+      .addCase(logoutUser.rejected, (s) => {
+        s.loading = false;
+        s.error = null;
       });
   },
 });
